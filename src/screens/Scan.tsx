@@ -51,11 +51,16 @@ export function Scan() {
         console.warn('camera error', e)
         setMode('error')
         setErrorType('camera')
-        setError(
-          e instanceof Error && e.name === 'NotAllowedError'
-            ? 'Você negou o acesso à câmera. Use a galeria ou autorize nas configurações do navegador.'
-            : 'Não consegui acessar a câmera. Tente usar a galeria.'
-        )
+        const name = e instanceof Error ? e.name : ''
+        let msg = 'Não consegui acessar a câmera. Tente usar a galeria.'
+        if (name === 'NotAllowedError') {
+          msg = 'Você negou o acesso à câmera. Autorize nas configurações do navegador ou use a galeria.'
+        } else if (name === 'NotFoundError') {
+          msg = 'Nenhuma câmera encontrada nesse dispositivo. Use a galeria pra escolher uma foto que já tem.'
+        } else if (name === 'NotReadableError') {
+          msg = 'Câmera está em uso por outro app. Feche os outros e tente de novo.'
+        }
+        setError(msg)
       }
     }
 
