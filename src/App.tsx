@@ -7,6 +7,8 @@ import { Jardim } from './screens/Jardim'
 import { Plantacao } from './screens/Plantacao'
 import { Scan } from './screens/Scan'
 import { ScanResult } from './screens/ScanResult'
+import { Streak } from './screens/Streak'
+import { Rega } from './screens/Rega'
 import { Placeholder } from './screens/Placeholder'
 import { AppLayout } from './components/AppLayout'
 
@@ -34,10 +36,7 @@ export default function App() {
               element={<Placeholder title="Detalhe da Espécie" next={{ label: 'Voltar ao Jardim', to: '/jardim' }} />}
             />
             <Route path="/plantacao" element={<Plantacao />} />
-            <Route
-              path="/streak"
-              element={<Placeholder title="Ofensiva (Streak)" next={{ label: 'Registrar rega', to: '/streak/rega' }} />}
-            />
+            <Route path="/streak" element={<Streak />} />
             <Route
               path="/perfil"
               element={<Placeholder title="Meu Perfil" next={{ label: 'Configurações', to: '/config' }} />}
@@ -47,10 +46,7 @@ export default function App() {
           {/* Telas modais / full-screen sem nav */}
           <Route path="/scan" element={<Scan />} />
           <Route path="/scan/resultado" element={<ScanResult />} />
-          <Route
-            path="/streak/rega"
-            element={<Placeholder title="Registrar Rega" next={{ label: 'Voltar ao Streak', to: '/streak' }} />}
-          />
+          <Route path="/streak/rega" element={<Rega />} />
           <Route
             path="/ranking"
             element={<Placeholder title="Ranking Semanal" next={{ label: 'Voltar Home', to: '/home' }} />}
