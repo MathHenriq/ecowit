@@ -32,6 +32,14 @@ export interface IdentifyResult {
 const PLANTNET_KEY = import.meta.env.VITE_PLANTNET_API_KEY as string | undefined
 const GEMINI_KEY   = import.meta.env.VITE_GEMINI_API_KEY as string | undefined
 
+// Log diagnóstico só uma vez no boot
+if (typeof window !== 'undefined') {
+  console.log('[identify] config', {
+    plantnet: PLANTNET_KEY ? `set (${PLANTNET_KEY.slice(0, 6)}…)` : 'MISSING',
+    gemini:   GEMINI_KEY   ? `set (${GEMINI_KEY.slice(0, 6)}…)`   : 'MISSING',
+  })
+}
+
 /* ─── Entry point principal ─────────────────────────────────── */
 export async function identify(
   imageDataUrl: string,
@@ -47,15 +55,20 @@ export async function identify(
 async function identifyWithPlantNet(imageDataUrl: string): Promise<IdentifyResult> {
   const blob = await dataUrlToBlob(imageDataUrl)
   const form = new FormData()
-  form.append('organs', 'auto')
+  // 'organs' precisa ser leaf|flower|fruit|bark|habit (não aceita 'auto' no project 'all')
+  form.append('organs', 'leaf')
   form.append('images', blob, 'plant.jpg')
 
-  const url = `https://my-api.plantnet.org/v2/identify/all?api-key=${PLANTNET_KEY}&include-related-images=false&no-reject=false&lang=pt`
+  const url = `https://my-api.plantnet.org/v2/identify/all?api-key=${PLANTNET_KEY}&include-related-images=false&lang=pt`
+  console.log('[identify] calling PlantNet…', { url, blobSize: blob.size, blobType: blob.type })
   const res = await fetch(url, { method: 'POST', body: form })
   if (!res.ok) {
-    throw new Error(`PlantNet ${res.status}: ${await res.text()}`)
+    const body = await res.text()
+    console.error('[identify] PlantNet error', res.status, body)
+    throw new Error(`PlantNet ${res.status}: ${body.slice(0, 200)}`)
   }
   const json = await res.json() as PlantNetResponse
+  console.log('[identify] PlantNet OK', { results: json.results?.length })
 
   const hypotheses: IdentifyHypothesis[] = json.results.slice(0, 5).map((r) => {
     const sci = r.species.scientificNameWithoutAuthor
