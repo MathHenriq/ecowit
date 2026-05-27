@@ -10,6 +10,8 @@ import { ScanResult } from './screens/ScanResult'
 import { Streak } from './screens/Streak'
 import { Rega } from './screens/Rega'
 import { Perfil } from './screens/Perfil'
+import { Ranking } from './screens/Ranking'
+import { Notificacoes } from './screens/Notificacoes'
 import { Placeholder } from './screens/Placeholder'
 import { AppLayout } from './components/AppLayout'
 
@@ -45,14 +47,8 @@ export default function App() {
           <Route path="/scan" element={<Scan />} />
           <Route path="/scan/resultado" element={<ScanResult />} />
           <Route path="/streak/rega" element={<Rega />} />
-          <Route
-            path="/ranking"
-            element={<Placeholder title="Ranking Semanal" next={{ label: 'Voltar Home', to: '/home' }} />}
-          />
-          <Route
-            path="/notificacoes"
-            element={<Placeholder title="Notificações" next={{ label: 'Voltar Home', to: '/home' }} />}
-          />
+          <Route path="/ranking" element={<Ranking />} />
+          <Route path="/notificacoes" element={<Notificacoes />} />
           <Route path="/config" element={<Placeholder title="Configurações" />} />
 
           <Route
