@@ -1,13 +1,18 @@
 import { useMemo } from 'react'
-import type { Terrain } from '../lib/terrains'
+import type { Terrain, PlantedSpot } from '../lib/terrains'
 import { SPECIES_CATALOG } from '../lib/species'
 import { PlantSprite } from './PlantSprite'
 
 /**
- * Diorama isométrico estilo Growdoro/Forest.
- * - Ilha orgânica composta por múltiplos tiles diamantes conectados
- * - Grama texturada (tons + tufos)
- * - Plantas SVG ilustradas (não emoji), ordenadas por Y para "z-index" isométrico
+ * Diorama isométrico estilo "garden builder" (referência: imagens fornecidas).
+ *
+ * Cada tile é um VOXEL CUBE de 3 faces:
+ *  - top:   diamante de grama com pequenas variações de tom
+ *  - left:  face de terra (mais escura, lateral esquerda)
+ *  - right: face de terra (mais clara, recebe luz)
+ *
+ * Tiles arranjam-se em layouts orgânicos (irregular). Plantas ficam sobre o topo.
+ * Fundo azul-noite com grid sutil. Glow ciano embaixo de cada bloco.
  */
 
 interface IsoDioramaProps {
@@ -15,202 +20,248 @@ interface IsoDioramaProps {
   foggy?: boolean
 }
 
+/* ─── Dimensões e helpers ─────────────────────────────────── */
+const TILE_W = 80   // largura do diamante (de ponta a ponta)
+const TILE_H = 40   // altura do diamante (de cima a baixo)
+const DIRT_H = 36   // altura da face de terra (lateral)
+
+/** Converte coords de grid (gx, gy) em posição central do topo do tile. */
+function gridToScreen(gx: number, gy: number, originX: number, originY: number) {
+  return {
+    cx: originX + (gx - gy) * (TILE_W / 2),
+    cy: originY + (gx + gy) * (TILE_H / 2),
+  }
+}
+
+/* ─── Layout dos terrenos (posições de grid dos tiles) ────── */
+const LAYOUTS: Record<Terrain['theme'], { gx: number; gy: number }[]> = {
+  sacada: [
+    { gx: 0, gy: 0 }, { gx: 1, gy: 0 }, { gx: 2, gy: 0 },
+    { gx: 0, gy: 1 }, { gx: 1, gy: 1 }, { gx: 2, gy: 1 },
+  ],
+  quintal: [
+    { gx: 0, gy: 0 }, { gx: 1, gy: 0 }, { gx: 2, gy: 0 }, { gx: 3, gy: 0 },
+    { gx: 0, gy: 1 }, { gx: 1, gy: 1 }, { gx: 2, gy: 1 }, { gx: 3, gy: 1 },
+    { gx: 1, gy: 2 }, { gx: 2, gy: 2 }, { gx: 3, gy: 2 }, { gx: 4, gy: 2 },
+  ],
+  horta: [
+    { gx: 0, gy: 0 }, { gx: 1, gy: 0 }, { gx: 2, gy: 0 }, { gx: 3, gy: 0 },
+    { gx: 0, gy: 1 }, { gx: 1, gy: 1 }, { gx: 2, gy: 1 }, { gx: 3, gy: 1 },
+    { gx: 0, gy: 2 }, { gx: 1, gy: 2 }, { gx: 2, gy: 2 }, { gx: 3, gy: 2 },
+  ],
+  sitio: [
+    { gx: 0, gy: 0 }, { gx: 1, gy: 0 }, { gx: 2, gy: 0 }, { gx: 3, gy: 0 }, { gx: 4, gy: 0 },
+    { gx: 0, gy: 1 }, { gx: 1, gy: 1 }, { gx: 2, gy: 1 }, { gx: 3, gy: 1 }, { gx: 4, gy: 1 },
+    { gx: 1, gy: 2 }, { gx: 2, gy: 2 }, { gx: 3, gy: 2 },
+  ],
+  reserva: [
+    { gx: 0, gy: 0 }, { gx: 1, gy: 0 }, { gx: 2, gy: 0 }, { gx: 3, gy: 0 }, { gx: 4, gy: 0 },
+    { gx: 0, gy: 1 }, { gx: 1, gy: 1 }, { gx: 2, gy: 1 }, { gx: 3, gy: 1 }, { gx: 4, gy: 1 },
+    { gx: 0, gy: 2 }, { gx: 1, gy: 2 }, { gx: 2, gy: 2 }, { gx: 3, gy: 2 }, { gx: 4, gy: 2 },
+  ],
+}
+
+/* ─── Paletas por tema (lighting + atmosfera) ─────────────── */
 const THEME: Record<Terrain['theme'], {
-  skyTop: string
-  skyBot: string
+  bgTop: string
+  bgBot: string
+  gridLine: string
   grassLight: string
   grassMid: string
   grassDark: string
-  earthLight: string
-  earthDark: string
-  pathColor: string
+  dirtLight: string
+  dirtMid: string
+  dirtDark: string
+  glow: string
 }> = {
   sacada: {
-    skyTop: '#fff8f6', skyBot: '#c4ebd1',
-    grassLight: '#86efac', grassMid: '#22c55e', grassDark: '#15803d',
-    earthLight: '#8b5a2b', earthDark: '#4a2f17',
-    pathColor: '#a85e3a',
+    bgTop: '#1a3a52',     bgBot: '#0f2236',     gridLine: 'rgba(96,165,250,0.08)',
+    grassLight: '#86efac', grassMid: '#34d399',  grassDark: '#15803d',
+    dirtLight: '#a87c5c',  dirtMid: '#7c4a26',   dirtDark: '#4a2f17',
+    glow: 'rgba(74,222,128,0.55)',
   },
   quintal: {
-    skyTop: '#e0f2fe', skyBot: '#bbf7d0',
-    grassLight: '#86efac', grassMid: '#16a34a', grassDark: '#14532d',
-    earthLight: '#8b5a2b', earthDark: '#3e2723',
-    pathColor: '#a85e3a',
+    bgTop: '#16334e',     bgBot: '#0d1f33',     gridLine: 'rgba(96,165,250,0.10)',
+    grassLight: '#86efac', grassMid: '#22c55e',  grassDark: '#14532d',
+    dirtLight: '#a87c5c',  dirtMid: '#7c4a26',   dirtDark: '#3e2723',
+    glow: 'rgba(74,222,128,0.6)',
   },
   horta: {
-    skyTop: '#fef3c7', skyBot: '#bbf7d0',
-    grassLight: '#a3e635', grassMid: '#65a30d', grassDark: '#3f6212',
-    earthLight: '#a16207', earthDark: '#5c3a1c',
-    pathColor: '#a85e3a',
+    bgTop: '#1f3a25',     bgBot: '#0f1f15',     gridLine: 'rgba(163,230,53,0.08)',
+    grassLight: '#bef264', grassMid: '#65a30d',  grassDark: '#3f6212',
+    dirtLight: '#c2783c',  dirtMid: '#92400e',   dirtDark: '#5c3a1c',
+    glow: 'rgba(163,230,53,0.55)',
   },
   sitio: {
-    skyTop: '#fce7f3', skyBot: '#a7f3d0',
-    grassLight: '#6ee7b7', grassMid: '#10b981', grassDark: '#064e3b',
-    earthLight: '#a87c5c', earthDark: '#5c3a1c',
-    pathColor: '#a85e3a',
+    bgTop: '#1e3a5f',     bgBot: '#0c1a2e',     gridLine: 'rgba(96,165,250,0.10)',
+    grassLight: '#6ee7b7', grassMid: '#10b981',  grassDark: '#064e3b',
+    dirtLight: '#b08968',  dirtMid: '#7c4a26',   dirtDark: '#5c3a1c',
+    glow: 'rgba(74,222,128,0.5)',
   },
   reserva: {
-    skyTop: '#1e3a8a', skyBot: '#065f46',
-    grassLight: '#22c55e', grassMid: '#15803d', grassDark: '#052e16',
-    earthLight: '#5c3a1c', earthDark: '#2e1c0e',
-    pathColor: '#7c4a26',
+    bgTop: '#0c1a2e',     bgBot: '#020617',     gridLine: 'rgba(96,165,250,0.06)',
+    grassLight: '#4ade80', grassMid: '#15803d',  grassDark: '#052e16',
+    dirtLight: '#7c4a26',  dirtMid: '#4a2f17',   dirtDark: '#1c0f08',
+    glow: 'rgba(96,165,250,0.6)',
   },
 }
 
 export function IsoDiorama({ terrain, foggy = false }: IsoDioramaProps) {
   const t = THEME[terrain.theme]
+  const layout = LAYOUTS[terrain.theme] ?? LAYOUTS.sacada
 
-  // Ordena plantas por Y crescente — quem está mais "atrás" (Y menor) é desenhado primeiro
-  const sortedPlants = useMemo(
-    () => [...terrain.plants].sort((a, b) => a.y - b.y),
-    [terrain.plants]
-  )
+  // Calcula bounding box do layout pra centralizar a cena
+  const { originX, originY, viewBoxW, viewBoxH } = useMemo(() => {
+    const positions = layout.map((p) => gridToScreen(p.gx, p.gy, 0, 0))
+    const xs = positions.map((p) => p.cx)
+    const ys = positions.map((p) => p.cy)
+    const minX = Math.min(...xs) - TILE_W / 2 - 20
+    const maxX = Math.max(...xs) + TILE_W / 2 + 20
+    const minY = Math.min(...ys) - 100 // espaço pras plantas altas em cima
+    const maxY = Math.max(...ys) + TILE_H / 2 + DIRT_H + 40
+    return {
+      originX: -minX,
+      originY: -minY,
+      viewBoxW: maxX - minX,
+      viewBoxH: maxY - minY,
+    }
+  }, [layout])
+
+  // Ordena tiles back-to-front pra z-order isométrico (gx+gy menor = atrás)
+  const sortedTiles = useMemo(() => {
+    return [...layout].sort((a, b) => (a.gx + a.gy) - (b.gx + b.gy))
+  }, [layout])
+
+  // Agrupa plantas por tile (distribui as plantas existentes entre os tiles do layout)
+  const plantsByTile = useMemo(() => {
+    const map = new Map<string, PlantedSpot[]>()
+    if (sortedTiles.length === 0) return map
+    terrain.plants.forEach((p, i) => {
+      const tile = sortedTiles[i % sortedTiles.length]
+      const key = `${tile.gx},${tile.gy}`
+      const list = map.get(key) ?? []
+      list.push(p)
+      map.set(key, list)
+    })
+    return map
+  }, [terrain.plants, sortedTiles])
 
   return (
     <div className="relative w-full" style={{ aspectRatio: '4 / 3' }}>
       <div
         className="absolute inset-0 rounded-3xl overflow-hidden"
-        style={{ background: `linear-gradient(180deg, ${t.skyTop} 0%, ${t.skyBot} 100%)` }}
+        style={{
+          background: `linear-gradient(180deg, ${t.bgTop} 0%, ${t.bgBot} 100%)`,
+        }}
       >
-        {/* Sol/lua */}
-        <div
-          className="absolute top-5 right-7 w-12 h-12 rounded-full"
-          style={{
-            background: terrain.theme === 'reserva'
-              ? 'radial-gradient(circle, #fef9c3 0%, #fbbf24 70%, transparent 100%)'
-              : 'radial-gradient(circle, #fff7ed 0%, #fbbf24 60%, transparent 100%)',
-            boxShadow: '0 0 32px rgba(251,191,36,0.4)',
-          }}
-        />
+        {/* Grid de fundo (sutil) */}
+        <svg className="absolute inset-0 w-full h-full opacity-50 pointer-events-none" aria-hidden>
+          <defs>
+            <pattern id={`grid-${terrain.id}`} width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(0)">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke={t.gridLine} strokeWidth="1" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill={`url(#grid-${terrain.id})`} />
+        </svg>
 
-        {/* Nuvens (não na reserva) */}
-        {terrain.theme !== 'reserva' && (
-          <>
-            <div className="absolute top-6 left-8 text-3xl opacity-80">☁️</div>
-            <div className="absolute top-14 left-24 text-2xl opacity-50">☁️</div>
-            <div className="absolute top-3 left-1/2 text-2xl opacity-60">☁️</div>
-          </>
-        )}
+        {/* Atmosfera celestial (estrelinhas/bolhas) */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full anim-pulse-soft"
+              style={{
+                left: `${(i * 47) % 95}%`,
+                top: `${(i * 31) % 60}%`,
+                width: 2 + (i % 3),
+                height: 2 + (i % 3),
+                background: 'rgba(255,255,255,0.5)',
+                animationDelay: `${i * 0.3}s`,
+              }}
+            />
+          ))}
+        </div>
 
+        {/* SVG do diorama */}
         <svg
-          viewBox="0 0 400 300"
+          viewBox={`0 0 ${viewBoxW} ${viewBoxH}`}
           className="absolute inset-0 w-full h-full"
           preserveAspectRatio="xMidYMid meet"
         >
           <defs>
+            {/* Gradientes reutilizáveis */}
             <linearGradient id={`grass-top-${terrain.id}`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%"  stopColor={t.grassLight} />
-              <stop offset="60%" stopColor={t.grassMid} />
+              <stop offset="50%" stopColor={t.grassMid} />
               <stop offset="100%" stopColor={t.grassDark} />
             </linearGradient>
-            <linearGradient id={`earth-${terrain.id}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"  stopColor={t.earthLight} />
-              <stop offset="100%" stopColor={t.earthDark} />
+            <linearGradient id={`dirt-left-${terrain.id}`} x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%"  stopColor={t.dirtMid} />
+              <stop offset="100%" stopColor={t.dirtDark} />
             </linearGradient>
-            {/* Filter pra plantas sedentas */}
+            <linearGradient id={`dirt-right-${terrain.id}`} x1="1" y1="0" x2="0" y2="1">
+              <stop offset="0%"  stopColor={t.dirtLight} />
+              <stop offset="100%" stopColor={t.dirtMid} />
+            </linearGradient>
+            <radialGradient id={`glow-${terrain.id}`} cx="50%" cy="100%" r="50%">
+              <stop offset="0%" stopColor={t.glow} />
+              <stop offset="100%" stopColor="transparent" />
+            </radialGradient>
+            {/* Filter sedenta */}
             <filter id="thirsty-filter" x="-20%" y="-20%" width="140%" height="140%">
-              <feColorMatrix type="saturate" values="0.45" />
+              <feColorMatrix type="saturate" values="0.5" />
             </filter>
           </defs>
 
-          {/* ─── ILHA: multi-tile orgânico ─────────────────────── */}
-          {/* Camada de TERRA (sides expostos) */}
-          <path
-            d={LANDMASS_EARTH_PATH}
-            fill={`url(#earth-${terrain.id})`}
-          />
-          {/* Linhas de erosão na terra */}
-          <path d="M 55 195 Q 200 215 345 195" stroke={t.earthDark} strokeWidth="1.2" fill="none" opacity="0.5" />
-          <path d="M 75 210 Q 200 228 325 210" stroke={t.earthDark} strokeWidth="1" fill="none" opacity="0.35" />
-
-          {/* Camada de GRAMA (topo) */}
-          <path
-            d={LANDMASS_GRASS_PATH}
-            fill={`url(#grass-top-${terrain.id})`}
-          />
-
-          {/* Highlight (luz no topo direito) */}
-          <path
-            d="M 200 80 L 340 160 L 260 160 Z"
-            fill="rgba(255,255,255,0.18)"
-          />
-
-          {/* ─── TEXTURA: tufos de grama escura espalhados ─── */}
-          {GRASS_TUFTS.map((g, i) => (
-            <ellipse
-              key={i}
-              cx={g.x}
-              cy={g.y}
-              rx={g.rx}
-              ry={g.ry}
-              fill={t.grassDark}
-              opacity="0.35"
-            />
-          ))}
-          {/* Mini blades de grama (linhas curtas) */}
-          {GRASS_BLADES.map((b, i) => (
-            <line
-              key={i}
-              x1={b.x}
-              y1={b.y}
-              x2={b.x + b.dx}
-              y2={b.y - 2.5}
-              stroke={t.grassLight}
-              strokeWidth="0.8"
-              opacity="0.7"
-            />
-          ))}
-
-          {/* Pedras decorativas */}
-          <ellipse cx="105" cy="178" rx="7" ry="3.5" fill="#9ca3af" />
-          <ellipse cx="103" cy="176" rx="6" ry="2.5" fill="#d1d5db" />
-          <ellipse cx="295" cy="172" rx="6" ry="3" fill="#9ca3af" />
-          <ellipse cx="293" cy="170" rx="5" ry="2" fill="#d1d5db" />
-          <circle cx="200" cy="195" r="3" fill="#9ca3af" />
-
-          {/* Caminho de tábuas (apenas Sacada/Quintal) */}
-          {(terrain.theme === 'sacada' || terrain.theme === 'quintal') && (
-            <g>
-              {[0, 1, 2, 3, 4].map((i) => (
-                <g key={i} transform={`translate(${235 + i * 14} ${165 + i * 7})`}>
-                  <rect x="-9" y="-2.5" width="18" height="5" rx="1.5" fill={t.pathColor} transform="rotate(-26)" />
-                  <rect x="-9" y="-3" width="18" height="1" rx="0.5" fill="rgba(255,255,255,0.2)" transform="rotate(-26)" />
-                </g>
-              ))}
-            </g>
-          )}
-
-          {/* Mini lago (Quintal+) */}
-          {(terrain.theme === 'quintal' || terrain.theme === 'sitio' || terrain.theme === 'reserva') && (
-            <g transform="translate(100 160)">
-              <ellipse cx="0" cy="0" rx="18" ry="8" fill="#1e40af" />
-              <ellipse cx="0" cy="-1.5" rx="15" ry="6" fill="#3b82f6" />
-              <ellipse cx="0" cy="-2.5" rx="11" ry="4" fill="#60a5fa" />
-              <ellipse cx="-3" cy="-3.5" rx="3" ry="1" fill="white" opacity="0.7" />
-              <ellipse cx="4" cy="-2" rx="2" ry="0.6" fill="white" opacity="0.5" />
-            </g>
-          )}
-
-          {/* Borboletas (animadas via CSS) */}
-          <text x="280" y="105" fontSize="14" className="anim-float">🦋</text>
-          <text x="155" y="95" fontSize="13" className="anim-float" style={{ animationDelay: '0.8s' }}>🦋</text>
-
-          {/* ─── PLANTAS (sprites SVG, ordenadas por Y) ────────── */}
-          {sortedPlants.map((spot, i) => {
-            const species = SPECIES_CATALOG.find((s) => s.id === spot.speciesId)
-            if (!species) return null
-            const { sx, sy } = projectToSvg(spot.x, spot.y)
+          {/* PASS 1: Glows ciano embaixo dos tiles (sombra/aurora) */}
+          {sortedTiles.map((tile) => {
+            const { cx, cy } = gridToScreen(tile.gx, tile.gy, originX, originY)
             return (
-              <g key={i} transform={`translate(${sx} ${sy})`}>
-                <PlantSprite species={species} scale={spot.scale ?? 1} thirsty={spot.status === 'thirsty'} />
-              </g>
+              <ellipse
+                key={`glow-${tile.gx}-${tile.gy}`}
+                cx={cx}
+                cy={cy + DIRT_H + 6}
+                rx={TILE_W / 2 + 4}
+                ry={6}
+                fill={`url(#glow-${terrain.id})`}
+                opacity="0.85"
+              />
             )
           })}
 
-          {/* Slots vazios (3 marcadores) */}
-          {terrain.plants.length > 0 && terrain.plants.length < terrain.capacity && (
-            <EmptySlots terrain={terrain} />
-          )}
+          {/* PASS 2: Tiles (voxels) */}
+          {sortedTiles.map((tile) => {
+            const { cx, cy } = gridToScreen(tile.gx, tile.gy, originX, originY)
+            return <VoxelTile key={`tile-${tile.gx}-${tile.gy}`} cx={cx} cy={cy} themeId={terrain.id} theme={t} />
+          })}
+
+          {/* PASS 3: Plantas — ordenadas por tile (back-to-front) */}
+          {sortedTiles.map((tile) => {
+            const plants = plantsByTile.get(`${tile.gx},${tile.gy}`) ?? []
+            const { cx, cy } = gridToScreen(tile.gx, tile.gy, originX, originY)
+            return (
+              <g key={`plants-${tile.gx}-${tile.gy}`}>
+                {plants.map((spot, i) => {
+                  const species = SPECIES_CATALOG.find((s) => s.id === spot.speciesId)
+                  if (!species) return null
+                  // Distribui plantas dentro do topo do tile
+                  const offsets = [
+                    { dx: 0, dy: -2 },
+                    { dx: -14, dy: 4 },
+                    { dx: 14, dy: 4 },
+                    { dx: 0, dy: 10 },
+                  ]
+                  const off = offsets[i % offsets.length]
+                  const scale = (spot.scale ?? 1) * 1.15
+                  return (
+                    <g key={i} transform={`translate(${cx + off.dx} ${cy + off.dy})`}>
+                      <PlantSprite species={species} scale={scale} thirsty={spot.status === 'thirsty'} />
+                    </g>
+                  )
+                })}
+              </g>
+            )
+          })}
         </svg>
       </div>
 
@@ -220,8 +271,8 @@ export function IsoDiorama({ terrain, foggy = false }: IsoDioramaProps) {
           className="absolute inset-0 rounded-3xl pointer-events-none"
           style={{
             background:
-              'radial-gradient(ellipse at center, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.85) 70%, rgba(255,248,246,0.98) 100%)',
-            backdropFilter: 'blur(7px) grayscale(50%)',
+              'radial-gradient(ellipse at center, rgba(255,255,255,0.18) 0%, rgba(15,34,54,0.85) 70%, rgba(15,34,54,0.98) 100%)',
+            backdropFilter: 'blur(7px)',
           }}
         />
       )}
@@ -229,93 +280,118 @@ export function IsoDiorama({ terrain, foggy = false }: IsoDioramaProps) {
   )
 }
 
-/* ─── Helpers de geometria ──────────────────────────────────── */
+/* ─── Voxel Tile (3 faces) ─────────────────────────────────── */
+function VoxelTile({
+  cx,
+  cy,
+  themeId,
+  theme,
+}: {
+  cx: number
+  cy: number
+  themeId: string
+  theme: typeof THEME['sacada']
+}) {
+  const halfW = TILE_W / 2
+  const halfH = TILE_H / 2
 
-/**
- * Mapeia coordenadas relativas do terreno (0-100, 0-100) em coordenadas SVG (0-400, 0-300).
- * A área plantável é a parte superior do losango da grama: aprox. x ∈ [80, 320], y ∈ [90, 220].
- */
-function projectToSvg(localX: number, localY: number) {
-  // Centro do losango (200, 155). Distorção isométrica: variação em X é maior que em Y.
-  const cx = 200
-  const cy = 155
-  const halfW = 130 // largura útil
-  const halfH = 60  // altura útil (mais comprimida pelo iso)
-  const nx = (localX - 50) / 50  // -1..1
-  const ny = (localY - 50) / 50  // -1..1
-  // Aplica perspectiva isométrica clássica
-  const sx = cx + (nx - ny) * halfW * 0.5
-  const sy = cy + (nx + ny) * halfH * 0.5
-  return { sx, sy }
-}
+  // Pontos do diamante (topo de grama)
+  const topN = { x: cx,         y: cy - halfH }
+  const topE = { x: cx + halfW, y: cy }
+  const topS = { x: cx,         y: cy + halfH }
+  const topW = { x: cx - halfW, y: cy }
 
-/* ─── Path da ilha (compartilhado, orgânico) ────────────────── */
+  // Pontos das laterais (descem DIRT_H)
+  const botE = { x: topE.x, y: topE.y + DIRT_H }
+  const botS = { x: topS.x, y: topS.y + DIRT_H }
+  const botW = { x: topW.x, y: topW.y + DIRT_H }
 
-// Topo da grama: contorno irregular (não um losango perfeito)
-const LANDMASS_GRASS_PATH = `
-  M 50 160
-  Q 70 90 200 80
-  Q 330 90 350 160
-  Q 280 215 200 235
-  Q 120 215 50 160 Z
-`
-
-// Camada de terra exposta (mesmo formato, deslocado pra baixo)
-const LANDMASS_EARTH_PATH = `
-  M 50 160
-  Q 70 90 200 80
-  Q 330 90 350 160
-  L 350 195
-  Q 280 250 200 270
-  Q 120 250 50 195 Z
-`
-
-/* ─── Tufos de grama escura espalhados (decoração) ──────────── */
-const GRASS_TUFTS = [
-  { x: 95, y: 145, rx: 6, ry: 2 },
-  { x: 165, y: 130, rx: 5, ry: 1.8 },
-  { x: 230, y: 130, rx: 6, ry: 2 },
-  { x: 305, y: 150, rx: 7, ry: 2.2 },
-  { x: 130, y: 180, rx: 5, ry: 1.6 },
-  { x: 270, y: 180, rx: 6, ry: 2 },
-  { x: 200, y: 215, rx: 7, ry: 2.2 },
-  { x: 75, y: 175, rx: 4, ry: 1.4 },
-  { x: 335, y: 178, rx: 4.5, ry: 1.6 },
-  { x: 175, y: 100, rx: 4, ry: 1.4 },
-]
-
-/* ─── Mini lâminas de grama (variação visual) ───────────────── */
-const GRASS_BLADES = (() => {
-  const out: { x: number; y: number; dx: number }[] = []
-  // distribui umas 40 lâminas aleatórias mas determinísticas
-  const seed = (n: number) => Math.sin(n * 999.13) * 10000 - Math.floor(Math.sin(n * 999.13) * 10000)
-  for (let i = 0; i < 40; i++) {
-    const x = 60 + seed(i + 1) * 280
-    const y = 100 + seed(i + 7) * 130
-    const dx = (seed(i + 13) - 0.5) * 2
-    out.push({ x, y, dx })
-  }
-  return out
-})()
-
-/* ─── Slots vazios (indicadores "tem espaço pra plantar") ───── */
-function EmptySlots(_props: { terrain: Terrain }) {
-  const positions = [
-    { x: 50, y: 35 },
-    { x: 88, y: 60 },
-    { x: 30, y: 85 },
-  ]
   return (
-    <>
-      {positions.map((p, i) => {
-        const { sx, sy } = projectToSvg(p.x, p.y)
-        return (
-          <g key={i} transform={`translate(${sx} ${sy})`} opacity="0.5">
-            <ellipse cx="0" cy="2" rx="9" ry="3" fill="none" stroke="white" strokeWidth="1.6" strokeDasharray="3 3" />
-            <text x="0" y="-3" fontSize="11" textAnchor="middle" fill="white" fontWeight="bold">+</text>
-          </g>
-        )
-      })}
-    </>
+    <g>
+      {/* Face direita (mais clara — luz) */}
+      <path
+        d={`M ${topE.x} ${topE.y} L ${botE.x} ${botE.y} L ${botS.x} ${botS.y} L ${topS.x} ${topS.y} Z`}
+        fill={`url(#dirt-right-${themeId})`}
+      />
+      {/* Linhas de erosão na face direita */}
+      <line x1={topE.x - 2} y1={topE.y + 8}  x2={topS.x + 6}  y2={topS.y + 6}  stroke={theme.dirtDark} strokeWidth="0.8" opacity="0.4" />
+      <line x1={topE.x - 6} y1={topE.y + 22} x2={topS.x + 10} y2={topS.y + 20} stroke={theme.dirtDark} strokeWidth="0.8" opacity="0.35" />
+
+      {/* Face esquerda (mais escura — sombra) */}
+      <path
+        d={`M ${topW.x} ${topW.y} L ${botW.x} ${botW.y} L ${botS.x} ${botS.y} L ${topS.x} ${topS.y} Z`}
+        fill={`url(#dirt-left-${themeId})`}
+      />
+      {/* Linhas de erosão na face esquerda */}
+      <line x1={topW.x + 2} y1={topW.y + 8}  x2={topS.x - 6}  y2={topS.y + 6}  stroke="black" strokeWidth="0.8" opacity="0.25" />
+      <line x1={topW.x + 6} y1={topW.y + 22} x2={topS.x - 10} y2={topS.y + 20} stroke="black" strokeWidth="0.8" opacity="0.2" />
+
+      {/* Topo (grama — diamante) */}
+      <path
+        d={`M ${topN.x} ${topN.y} L ${topE.x} ${topE.y} L ${topS.x} ${topS.y} L ${topW.x} ${topW.y} Z`}
+        fill={`url(#grass-top-${themeId})`}
+        stroke={theme.grassDark}
+        strokeWidth="0.6"
+      />
+
+      {/* Highlight sutil no topo (lado direito recebe luz) */}
+      <path
+        d={`M ${topN.x} ${topN.y} L ${topE.x} ${topE.y} L ${cx} ${cy} Z`}
+        fill="rgba(255,255,255,0.10)"
+      />
+
+      {/* Tufos de grama (pequenos dots escuros aleatórios em posições determinísticas) */}
+      {[
+        { dx: -8,  dy: -4, rx: 3,   ry: 1.2 },
+        { dx: 12,  dy: -2, rx: 2.5, ry: 1   },
+        { dx: -4,  dy: 6,  rx: 3,   ry: 1.2 },
+        { dx: 8,   dy: 8,  rx: 2.5, ry: 1.2 },
+        { dx: -14, dy: 4,  rx: 2,   ry: 0.8 },
+      ].map((g, i) => (
+        <ellipse
+          key={i}
+          cx={cx + g.dx}
+          cy={cy + g.dy}
+          rx={g.rx}
+          ry={g.ry}
+          fill={theme.grassDark}
+          opacity="0.35"
+        />
+      ))}
+
+      {/* Mini lâminas de grama (linhas curtas claras) */}
+      {[-10, -2, 6, 14].map((dx, i) => (
+        <line
+          key={i}
+          x1={cx + dx}
+          y1={cy + (i % 2 === 0 ? -3 : 5)}
+          x2={cx + dx + 0.5}
+          y2={cy + (i % 2 === 0 ? -7 : 1)}
+          stroke={theme.grassLight}
+          strokeWidth="0.8"
+          opacity="0.7"
+        />
+      ))}
+
+      {/* Borda inferior dos lados — toque de luz/grama caindo */}
+      <line
+        x1={botW.x}
+        y1={botW.y - 1}
+        x2={botS.x}
+        y2={botS.y - 1}
+        stroke={theme.grassDark}
+        strokeWidth="1.5"
+        opacity="0.6"
+      />
+      <line
+        x1={botS.x}
+        y1={botS.y - 1}
+        x2={botE.x}
+        y2={botE.y - 1}
+        stroke={theme.grassDark}
+        strokeWidth="1.5"
+        opacity="0.4"
+      />
+    </g>
   )
 }

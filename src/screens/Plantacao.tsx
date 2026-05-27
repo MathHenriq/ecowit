@@ -115,13 +115,13 @@ export function Plantacao() {
         {!activeUnlocked && (
           <div className="absolute inset-x-4 top-2 bottom-4 rounded-3xl flex flex-col items-center justify-center text-center px-6 pointer-events-none">
             <div className="text-5xl mb-2 anim-float">{active.emoji}</div>
-            <h2 className="text-xl font-bold text-[var(--color-ink)]">{active.name}</h2>
-            <p className="text-sm text-[var(--color-ink-soft)] mt-1 max-w-[260px]">
+            <h2 className="text-xl font-bold text-white drop-shadow-lg">{active.name}</h2>
+            <p className="text-sm text-white/85 mt-1 max-w-[260px] drop-shadow">
               Desbloqueia ao chegar no <strong>nível {active.unlockedAt}</strong>.
               <br />
               Faltam {active.unlockedAt - USER_LEVEL} nível(is) — bora regar! 🌱
             </p>
-            <div className="mt-3 text-xs text-[var(--color-ink-faint)] italic">
+            <div className="mt-3 text-xs text-white/70 italic">
               {active.capacity} espaços te esperando aqui
             </div>
           </div>
@@ -169,8 +169,8 @@ export function Plantacao() {
       </div>
 
       {/* Dica embaixo */}
-      <div className="px-4 pb-3 text-center text-xs text-[var(--color-ink-faint)]">
-        Toque numa planta pra cuidar dela · arraste pra explorar
+      <div className="px-4 pb-3 text-center text-[10px] text-[var(--color-ink-faint)] font-bold uppercase tracking-wider">
+        Toque numa planta pra cuidar · arraste pra explorar
       </div>
     </main>
   )
