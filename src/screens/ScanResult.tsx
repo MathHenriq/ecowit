@@ -221,7 +221,6 @@ export function ScanResult() {
 
 /* ─── Card de resultado (PlantNet OU Gemini) ────────────────── */
 function ResultCard({
-  provider,
   name,
   scientific,
   matchedSpecies,

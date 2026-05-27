@@ -4,6 +4,7 @@
  * Cada planta é renderizada dentro de um <g> e posicionada pelo pai.
  */
 
+import type { ReactElement } from 'react'
 import type { Species, SpeciesCategory } from '../lib/species'
 
 interface PlantSpriteProps {
@@ -314,7 +315,7 @@ const GenericTree = () => (
 )
 
 /* ─── Dicionário ─────────────────────────────────────────── */
-const SPRITES: Record<string, () => JSX.Element> = {
+const SPRITES: Record<string, () => ReactElement> = {
   lavanda: Lavanda,
   'cravo-defunto': CravoDefunto,
   narciso: Narciso,
@@ -327,7 +328,7 @@ const SPRITES: Record<string, () => JSX.Element> = {
   pilea: Pilea,
 }
 
-const CATEGORY_FALLBACK: Record<SpeciesCategory, () => JSX.Element> = {
+const CATEGORY_FALLBACK: Record<SpeciesCategory, () => ReactElement> = {
   flor: GenericFlower,
   suculenta: GenericSucculent,
   tropical: GenericTropical,

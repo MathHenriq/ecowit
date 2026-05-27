@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import type { Terrain, PlantedSpot } from '../lib/terrains'
-import { SPECIES_CATALOG, type Species } from '../lib/species'
+import type { Terrain } from '../lib/terrains'
+import { SPECIES_CATALOG } from '../lib/species'
 import { PlantSprite } from './PlantSprite'
 
 /**
@@ -299,7 +299,7 @@ const GRASS_BLADES = (() => {
 })()
 
 /* ─── Slots vazios (indicadores "tem espaço pra plantar") ───── */
-function EmptySlots({ terrain }: { terrain: Terrain }) {
+function EmptySlots(_props: { terrain: Terrain }) {
   const positions = [
     { x: 50, y: 35 },
     { x: 88, y: 60 },

@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import {
   SPECIES_CATALOG,
   UNLOCKED_SPECIES_IDS,
-  CATEGORY_LABELS,
   type Species,
   type SpeciesCategory,
 } from '../lib/species'
