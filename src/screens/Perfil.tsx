@@ -22,17 +22,19 @@ export function Perfil() {
 
   return (
     <main className="flex-1 flex flex-col min-h-0">
-      {/* HEADER com gradient */}
+      {/* HEADER com gradient — agora self-contained, sem overlap */}
       <header
-        className="relative px-5 pt-6 pb-16 text-white"
+        className="relative px-5 pt-6 pb-6 text-white"
         style={{
           background:
             'radial-gradient(circle at 50% 0%, var(--color-leaf-400) 0%, var(--color-leaf-700) 100%)',
+          borderBottomLeftRadius: '24px',
+          borderBottomRightRadius: '24px',
         }}
       >
         <button
           aria-label="Configurações"
-          className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 backdrop-blur-md flex items-center justify-center"
+          className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 backdrop-blur-md flex items-center justify-center text-base z-10"
           onClick={() => alert('Tela de configurações ainda em construção 🌱')}
         >
           ⚙️
@@ -42,36 +44,37 @@ export function Perfil() {
         <div className="flex flex-col items-center mt-2">
           <div className="relative">
             <div
-              className="w-32 h-32 rounded-full flex items-center justify-center"
+              className="w-28 h-28 rounded-full flex items-center justify-center"
               style={{
                 background: 'radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%)',
                 border: '4px solid white',
                 boxShadow: '0 6px 0 rgba(0,0,0,0.15)',
               }}
             >
-              <Brotin size={108} mood="cheer" />
+              <Brotin size={92} mood="cheer" />
             </div>
-            {/* Level chip flutuante */}
+            {/* Level chip — agora no canto superior direito DO AVATAR, sem flutuar livre */}
             <div
-              className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-xs font-extrabold whitespace-nowrap"
+              className="absolute -top-1 -right-2 px-2 py-0.5 rounded-full text-[10px] font-extrabold whitespace-nowrap"
               style={{
                 background: 'var(--color-sun-500)',
                 color: 'white',
-                boxShadow: '0 3px 0 var(--color-sun-700)',
+                boxShadow: '0 2px 0 var(--color-sun-700)',
+                border: '2px solid white',
               }}
             >
-              ⭐ NÍVEL {u.level}
+              ⭐ NV. {u.level}
             </div>
           </div>
 
-          <h1 className="mt-5 text-2xl font-extrabold" style={{ textShadow: '0 2px 0 rgba(0,0,0,0.2)' }}>
+          <h1 className="mt-3 text-xl font-extrabold" style={{ textShadow: '0 2px 0 rgba(0,0,0,0.2)' }}>
             {u.name}
           </h1>
           <p className="text-xs font-bold opacity-80">@{u.handle}</p>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-6 -mt-10 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto px-4 pb-6 pt-4 flex flex-col gap-4">
         {/* XP bar */}
         <Card padding="md">
           <div className="flex justify-between items-baseline mb-1.5">
