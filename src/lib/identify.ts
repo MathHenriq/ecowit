@@ -62,11 +62,27 @@ async function identifyViaProxy(
   provider: IdentifyProvider
 ): Promise<IdentifyResult> {
   console.log(`[identify] calling ${endpoint}…`)
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ image: imageDataUrl }),
-  })
+
+  // Timeout de 25s — não fica eterno se o servidor travar
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 25_000)
+
+  let res: Response
+  try {
+    res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ image: imageDataUrl }),
+      signal: controller.signal,
+    })
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error(`${provider} timeout — servidor demorou mais de 25s pra responder.`)
+    }
+    throw err
+  } finally {
+    clearTimeout(timeoutId)
+  }
 
   if (!res.ok) {
     const body = await res.text()
@@ -75,7 +91,7 @@ async function identifyViaProxy(
   }
 
   const json = await res.json()
-  console.log(`[identify] ${endpoint} OK`)
+  console.log(`[identify] ${endpoint} OK`, json)
 
   return provider === 'plantnet'
     ? parsePlantNet(json)

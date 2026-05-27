@@ -1,12 +1,8 @@
 /**
- * Vercel Serverless Function — proxy pra Gemini Vision API.
- * Embute a chave no servidor pra não expor no frontend e contornar restrições de origin.
- *
- * Recebe: POST { image: "data:image/jpeg;base64,..." }
- * Devolve: resposta original do Gemini generateContent.
+ * Vercel Edge Function — proxy pra Gemini Vision API.
  */
 
-export const config = { runtime: 'nodejs' }
+export const config = { runtime: 'edge' }
 
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
@@ -37,33 +33,44 @@ export default async function handler(req: Request): Promise<Response> {
     'Liste de 1 a 3 hipóteses ordenadas por confiança.'
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`
-  const upstream = await fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{
-        parts: [
-          { text: prompt },
-          { inline_data: { mime_type: mimeType, data: base64 } },
-        ],
-      }],
-      generationConfig: { responseMimeType: 'application/json' },
-    }),
-  })
-  const text = await upstream.text()
 
-  return new Response(text, {
-    status: upstream.status,
-    headers: {
-      'content-type': upstream.headers.get('content-type') ?? 'application/json',
-      'cache-control': 'no-store',
-    },
-  })
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 20_000)
+
+  try {
+    const upstream = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: mimeType, data: base64 } },
+          ],
+        }],
+        generationConfig: { responseMimeType: 'application/json' },
+      }),
+      signal: controller.signal,
+    })
+    const text = await upstream.text()
+    return new Response(text, {
+      status: upstream.status,
+      headers: {
+        'content-type': upstream.headers.get('content-type') ?? 'application/json',
+        'cache-control': 'no-store',
+      },
+    })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown upstream error'
+    return json({ error: `Gemini upstream failed: ${msg}` }, 502)
+  } finally {
+    clearTimeout(timeoutId)
+  }
 }
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   })
 }

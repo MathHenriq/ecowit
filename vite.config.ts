@@ -20,11 +20,10 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
-        icons: [
-          { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/pwa-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-        ],
+        // Icons removidos por ora (vamos adicionar PNGs gerados depois).
+        // Sem icons o manifest ainda funciona pra "Adicionar à tela inicial",
+        // só usa o favicon SVG como fallback.
+        icons: [],
       },
     }),
   ],
