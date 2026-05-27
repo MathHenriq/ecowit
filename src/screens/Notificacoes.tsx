@@ -166,16 +166,22 @@ export function Notificacoes() {
         {filtered.map((n) => (
           <article
             key={n.id}
-            className="rounded-2xl p-3 flex gap-3"
+            className="relative rounded-2xl p-3 flex gap-3"
             style={{
               background: n.unread ? '#e9f7ed' : 'white',
-              border: '2px solid var(--color-earth-200)',
+              border: n.unread
+                ? '2px solid var(--color-leaf-300)'
+                : '2px solid var(--color-earth-200)',
               boxShadow: '0 3px 0 var(--color-earth-300)',
             }}
           >
-            {/* Dot de não-lido */}
+            {/* Dot de não-lido — dentro do ícone, canto superior direito */}
             {n.unread && (
-              <div className="absolute w-2 h-2 rounded-full bg-[var(--color-leaf-500)] mt-2 -ml-1" />
+              <div
+                className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-[var(--color-leaf-500)]"
+                style={{ boxShadow: '0 0 0 2px white' }}
+                aria-label="Não lida"
+              />
             )}
 
             {/* Ícone */}
