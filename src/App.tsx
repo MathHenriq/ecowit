@@ -1,0 +1,72 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Splash } from './screens/Splash'
+import { Login } from './screens/Login'
+import { Onboarding } from './screens/Onboarding'
+import { Feed } from './screens/Feed'
+import { Jardim } from './screens/Jardim'
+import { Plantacao } from './screens/Plantacao'
+import { Scan } from './screens/Scan'
+import { ScanResult } from './screens/ScanResult'
+import { Placeholder } from './screens/Placeholder'
+import { AppLayout } from './components/AppLayout'
+
+/**
+ * Roteamento principal do EcoWit.
+ * - Rotas "públicas" (Splash, Login, Onboarding): tela cheia, sem nav.
+ * - Rotas "autenticadas": dentro de AppLayout (com BottomNav).
+ */
+export default function App() {
+  return (
+    <BrowserRouter>
+      <div className="mx-auto w-full max-w-[440px] min-h-svh flex flex-col bg-[var(--color-cream)] shadow-xl">
+        <Routes>
+          {/* Públicas */}
+          <Route path="/" element={<Splash />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+
+          {/* Autenticadas (com BottomNav) */}
+          <Route element={<AppLayout />}>
+            <Route path="/home" element={<Feed />} />
+            <Route path="/jardim" element={<Jardim />} />
+            <Route
+              path="/jardim/:speciesId"
+              element={<Placeholder title="Detalhe da Espécie" next={{ label: 'Voltar ao Jardim', to: '/jardim' }} />}
+            />
+            <Route path="/plantacao" element={<Plantacao />} />
+            <Route
+              path="/streak"
+              element={<Placeholder title="Ofensiva (Streak)" next={{ label: 'Registrar rega', to: '/streak/rega' }} />}
+            />
+            <Route
+              path="/perfil"
+              element={<Placeholder title="Meu Perfil" next={{ label: 'Configurações', to: '/config' }} />}
+            />
+          </Route>
+
+          {/* Telas modais / full-screen sem nav */}
+          <Route path="/scan" element={<Scan />} />
+          <Route path="/scan/resultado" element={<ScanResult />} />
+          <Route
+            path="/streak/rega"
+            element={<Placeholder title="Registrar Rega" next={{ label: 'Voltar ao Streak', to: '/streak' }} />}
+          />
+          <Route
+            path="/ranking"
+            element={<Placeholder title="Ranking Semanal" next={{ label: 'Voltar Home', to: '/home' }} />}
+          />
+          <Route
+            path="/notificacoes"
+            element={<Placeholder title="Notificações" next={{ label: 'Voltar Home', to: '/home' }} />}
+          />
+          <Route path="/config" element={<Placeholder title="Configurações" />} />
+
+          <Route
+            path="*"
+            element={<Placeholder title="404 — caminho não encontrado" next={{ label: 'Voltar ao início', to: '/' }} />}
+          />
+        </Routes>
+      </div>
+    </BrowserRouter>
+  )
+}

@@ -1,0 +1,143 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap');
+
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────
+   Eco-Growth Design System — tokens compartilhados
+   Sincronizado com o design system do Stitch (Eco-Growth System)
+   ───────────────────────────────────────────────────────────── */
+@theme {
+  /* Fontes */
+  --font-display: 'Quicksand', system-ui, sans-serif;
+  --font-body: 'Quicksand', system-ui, sans-serif;
+
+  /* Cores — paleta principal */
+  --color-leaf-50:  #e9f7ed;
+  --color-leaf-100: #c4ebd1;
+  --color-leaf-300: #6bfe9c;
+  --color-leaf-400: #4ae183;
+  --color-leaf-500: #2ecc71;  /* primary */
+  --color-leaf-600: #1fae5d;
+  --color-leaf-700: #006d37;
+  --color-leaf-800: #005228;
+  --color-leaf-900: #00210c;
+
+  --color-sky-100:  #cce5ff;
+  --color-sky-300:  #92ccff;
+  --color-sky-500:  #3498db;
+  --color-sky-700:  #006397;
+
+  --color-sun-100:  #ffe084;
+  --color-sun-300:  #eec209;
+  --color-sun-500:  #d7ae00;
+  --color-sun-700:  #735c00;
+
+  --color-earth-50:  #fff0ee;
+  --color-earth-100: #ffe9e5;
+  --color-earth-200: #ffdad4;
+  --color-earth-300: #f8d1cb;
+  --color-earth-500: #c87060;
+  --color-earth-700: #6b4423;
+  --color-earth-900: #3e2723;
+
+  --color-cream:    #fff8f6;
+  --color-ink:      #2b1613;
+  --color-ink-soft: #3d4a3e;
+  --color-ink-faint: #6c7b6d;
+}
+
+/* Base */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--color-cream);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar discreta */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: var(--color-leaf-300); border-radius: 999px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ─────────────────────────────────────────────────────────────
+   Componentes utilitários "squishy" do Eco-Growth System
+   ───────────────────────────────────────────────────────────── */
+
+/* Botão pill com depth border 4px (cor escura embaixo, "pressable look") */
+.btn-squish {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-family: var(--font-body);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  transition: transform 80ms ease, box-shadow 80ms ease;
+  cursor: pointer;
+  border: none;
+}
+.btn-squish:active { transform: translateY(2px); }
+
+.btn-primary {
+  background: var(--color-leaf-500);
+  color: white;
+  box-shadow: 0 4px 0 var(--color-leaf-700);
+}
+.btn-primary:hover { background: var(--color-leaf-400); }
+.btn-primary:active { box-shadow: 0 2px 0 var(--color-leaf-700); }
+
+.btn-outline {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  border: 2px solid var(--color-earth-300);
+  box-shadow: 0 4px 0 var(--color-earth-500);
+}
+
+/* Card squishy */
+.card-squish {
+  background: white;
+  border-radius: 1.5rem;
+  border: 2px solid var(--color-earth-200);
+  box-shadow: 0 4px 0 var(--color-earth-300);
+  padding: 1rem;
+}
+
+/* Pill / chip */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--color-leaf-50);
+  color: var(--color-leaf-700);
+}
+
+/* Animações */
+@keyframes float-leaf {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(4deg); }
+}
+.anim-float { animation: float-leaf 3s ease-in-out infinite; }
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.96); }
+}
+.anim-pulse-soft { animation: pulse-soft 1.6s ease-in-out infinite; }
