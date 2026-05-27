@@ -32,7 +32,8 @@ export default async function handler(req: Request): Promise<Response> {
     '{"hypotheses":[{"popular":"nome comum em português","scientific":"Nome Científico","confidence":0.0-1.0}]}. ' +
     'Liste de 1 a 3 hipóteses ordenadas por confiança.'
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`
+  // Modelo flash mais estável + amplamente disponível
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`
 
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 20_000)

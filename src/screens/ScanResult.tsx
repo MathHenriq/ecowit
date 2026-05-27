@@ -16,6 +16,7 @@ export function ScanResult() {
   const [primary, setPrimary] = useState<IdentifyResult | null>(null)
   const [aiResult, setAiResult] = useState<IdentifyResult | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
   const [selectedSpeciesId, setSelectedSpeciesId] = useState<string | null>(null)
   const [showCelebration, setShowCelebration] = useState(false)
 
@@ -35,12 +36,14 @@ export function ScanResult() {
   async function consultAI() {
     if (!photo) return
     setAiLoading(true)
+    setAiError(null)
     try {
       const res = await identify(photo, 'gemini')
       setAiResult(res)
     } catch (err) {
       console.error('gemini error', err)
-      alert('Não consegui consultar a IA agora. Tenta de novo daqui a pouco.')
+      const msg = err instanceof Error ? err.message : 'Erro desconhecido'
+      setAiError(msg)
     } finally {
       setAiLoading(false)
     }
@@ -137,23 +140,31 @@ export function ScanResult() {
 
         {/* Botão "Usar IA" — segunda opinião do Gemini */}
         {!aiResult && (
-          <button
-            onClick={consultAI}
-            disabled={aiLoading}
-            className="flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-[var(--color-sky-500)] text-[var(--color-sky-700)] font-bold text-sm disabled:opacity-60"
-          >
-            {aiLoading ? (
-              <>
-                <span className="anim-pulse-soft">✨</span>
-                Consultando IA...
-              </>
-            ) : (
-              <>
-                <span>✨</span>
-                Não é essa? Usar IA pra confirmar
-              </>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={consultAI}
+              disabled={aiLoading}
+              className="flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-[var(--color-sky-500)] text-[var(--color-sky-700)] font-bold text-sm disabled:opacity-60"
+            >
+              {aiLoading ? (
+                <>
+                  <span className="anim-pulse-soft">✨</span>
+                  Consultando IA...
+                </>
+              ) : (
+                <>
+                  <span>✨</span>
+                  {aiError ? 'Tentar IA de novo' : 'Não é essa? Usar IA pra confirmar'}
+                </>
+              )}
+            </button>
+            {aiError && (
+              <div className="rounded-xl bg-red-50 border-2 border-red-200 p-3 text-xs text-red-700">
+                <div className="font-bold mb-1">Erro na IA:</div>
+                <div className="break-words font-mono text-[11px]">{aiError}</div>
+              </div>
             )}
-          </button>
+          </div>
         )}
 
         {/* Card SECUNDÁRIO (Gemini) — só aparece após clicar */}
