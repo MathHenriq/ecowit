@@ -9,6 +9,7 @@ import { Scan } from './screens/Scan'
 import { ScanResult } from './screens/ScanResult'
 import { Streak } from './screens/Streak'
 import { Rega } from './screens/Rega'
+import { Perfil } from './screens/Perfil'
 import { Placeholder } from './screens/Placeholder'
 import { AppLayout } from './components/AppLayout'
 
@@ -37,10 +38,7 @@ export default function App() {
             />
             <Route path="/plantacao" element={<Plantacao />} />
             <Route path="/streak" element={<Streak />} />
-            <Route
-              path="/perfil"
-              element={<Placeholder title="Meu Perfil" next={{ label: 'Configurações', to: '/config' }} />}
-            />
+            <Route path="/perfil" element={<Perfil />} />
           </Route>
 
           {/* Telas modais / full-screen sem nav */}
