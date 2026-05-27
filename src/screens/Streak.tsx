@@ -37,44 +37,46 @@ export function Streak() {
       <div className="flex-1 overflow-y-auto px-4 pb-4 flex flex-col gap-4">
         {/* HERO — número grande do streak */}
         <div
-          className="relative rounded-3xl px-5 pt-6 pb-5 text-white overflow-hidden"
+          className="relative rounded-3xl px-5 pt-5 pb-5 text-white overflow-hidden min-h-[180px]"
           style={{
             background:
               'radial-gradient(circle at 80% 20%, #ffe084 0%, transparent 55%), linear-gradient(135deg, #ff8a5b 0%, #d4602f 100%)',
             boxShadow: '0 8px 24px rgba(212,96,47,0.3)',
           }}
         >
-          {/* Brotin no canto */}
-          <div className="absolute -right-3 -bottom-4 anim-float">
-            <Brotin size={120} mood={streak > 0 ? 'cheer' : 'sleep'} />
+          {/* Brotin no canto — contido no card, sem cortes */}
+          <div className="absolute right-2 bottom-2 anim-float pointer-events-none">
+            <Brotin size={104} mood={streak > 0 ? 'cheer' : 'sleep'} />
           </div>
 
-          <div
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wider"
-            style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)' }}
-          >
-            <span>🔥</span> SEQUÊNCIA
-          </div>
-
-          <div className="flex items-baseline gap-2 mt-2">
+          <div className="relative z-10 max-w-[58%]">
             <div
-              className="text-7xl font-extrabold leading-none"
-              style={{ letterSpacing: '-0.04em', textShadow: '0 4px 0 rgba(0,0,0,0.15)' }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wider"
+              style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(8px)' }}
             >
-              {streak}
+              <span>🔥</span> SEQUÊNCIA
             </div>
-            <div className="text-lg font-extrabold opacity-95">{streak === 1 ? 'dia' : 'dias'}</div>
-          </div>
 
-          <p className="text-sm font-bold mt-1 max-w-[210px]">
-            {streak === 0
-              ? 'Bora começar hoje! 🌱'
-              : streak < 7
-              ? 'Tá indo bem. Não para agora!'
-              : streak < 30
-              ? 'Você tá voando 🚀'
-              : 'Lenda absoluta 👑'}
-          </p>
+            <div className="flex items-baseline gap-2 mt-2">
+              <div
+                className="text-6xl font-extrabold leading-none"
+                style={{ letterSpacing: '-0.04em', textShadow: '0 4px 0 rgba(0,0,0,0.15)' }}
+              >
+                {streak}
+              </div>
+              <div className="text-base font-extrabold opacity-95">{streak === 1 ? 'dia' : 'dias'}</div>
+            </div>
+
+            <p className="text-xs font-bold mt-1.5 leading-snug">
+              {streak === 0
+                ? 'Bora começar hoje! 🌱'
+                : streak < 7
+                ? 'Tá indo bem. Não para agora!'
+                : streak < 30
+                ? 'Você tá voando 🚀'
+                : 'Lenda absoluta 👑'}
+            </p>
+          </div>
         </div>
 
         {/* SEMANA */}
@@ -88,27 +90,28 @@ export function Streak() {
             </span>
           </div>
           <Card padding="sm">
-            <div className="flex justify-between gap-1.5">
+            <div className="flex gap-1 w-full">
               {week.map((d, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                <div key={i} className="flex-1 min-w-0 flex flex-col items-center gap-1">
                   <div
                     className={`text-[10px] font-extrabold tracking-wider ${
-                      d.isToday ? 'text-[var(--color-leaf-700)]' : 'text-[var(--color-ink-faint)]'
+                      d.isToday ? 'text-[#d4602f]' : 'text-[var(--color-ink-faint)]'
                     }`}
                   >
                     {d.weekday}
                   </div>
                   <div
-                    className={`w-9 h-11 rounded-xl flex items-center justify-center transition-all ${
+                    className={`w-full aspect-[3/4] rounded-lg flex items-center justify-center transition-all ${
                       d.watered
                         ? 'bg-[var(--color-leaf-500)] text-white'
                         : 'bg-[var(--color-earth-100)] text-[var(--color-ink-faint)]'
-                    } ${d.isToday ? 'ring-2 ring-[#ff8a5b] ring-offset-2 ring-offset-white' : ''}`}
+                    } ${d.isToday ? 'border-2 border-[#ff8a5b]' : ''}`}
                     style={{
-                      boxShadow: d.watered ? '0 3px 0 var(--color-leaf-700)' : 'none',
+                      boxShadow: d.watered ? '0 2px 0 var(--color-leaf-700)' : 'none',
+                      maxWidth: '42px',
                     }}
                   >
-                    {d.watered ? <span className="text-lg">💧</span> : <span className="font-bold text-sm">{d.day}</span>}
+                    {d.watered ? <span className="text-base">💧</span> : <span className="font-bold text-xs">{d.day}</span>}
                   </div>
                 </div>
               ))}
