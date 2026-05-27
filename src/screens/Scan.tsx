@@ -310,12 +310,12 @@ export function Scan() {
         </div>
       </footer>
 
-      {/* Input file invisível (fallback galeria) */}
+      {/* Input file invisível (galeria do dispositivo) */}
+      {/* Sem `capture` — no iOS, isso abre o action sheet: Tirar Foto / Biblioteca / Arquivo. */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={onFilePicked}
         hidden
       />
