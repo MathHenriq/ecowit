@@ -153,9 +153,10 @@ function PostCard({ post }: { post: Post }) {
         </Chip>
       </header>
 
-      {/* Imagem (placeholder colorido com emoji) */}
-      <div
-        className="relative aspect-square mx-3 mb-3 rounded-2xl overflow-hidden flex items-center justify-center"
+      {/* Imagem (clica pra abrir detalhe) */}
+      <Link
+        to={`/post/${post.id}`}
+        className="block relative aspect-square mx-3 mb-3 rounded-2xl overflow-hidden flex items-center justify-center"
         style={{ background: post.imageBg, border: '2px solid var(--color-leaf-200)' }}
       >
         <div className="text-[140px] leading-none drop-shadow-sm">{post.imageEmoji}</div>
@@ -164,10 +165,12 @@ function PostCard({ post }: { post: Post }) {
             {post.plant.name} (Nv. {post.plant.level})
           </Chip>
         </div>
-      </div>
+      </Link>
 
-      {/* Caption */}
-      <p className="px-4 text-sm leading-relaxed">{post.caption}</p>
+      {/* Caption (clica pra abrir detalhe) */}
+      <Link to={`/post/${post.id}`} className="block px-4 text-sm leading-relaxed hover:opacity-90">
+        {post.caption}
+      </Link>
 
       {/* Ações */}
       <div className="px-4 py-3 mt-2 flex items-center gap-4 text-sm">
@@ -175,10 +178,10 @@ function PostCard({ post }: { post: Post }) {
           <span className="text-xl">{liked ? '❤️' : '🤍'}</span>
           <span className="font-bold">{likeCount}</span>
         </button>
-        <button className="flex items-center gap-1.5 hover:opacity-70">
+        <Link to={`/post/${post.id}`} className="flex items-center gap-1.5 hover:opacity-70">
           <span className="text-xl">💬</span>
           <span className="font-bold">{post.comments}</span>
-        </button>
+        </Link>
         <button className="ml-auto hover:opacity-70" aria-label="Salvar">
           <span className="text-xl">🔖</span>
         </button>

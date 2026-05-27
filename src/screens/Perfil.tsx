@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Brotin } from '../components/Brotin'
 import { Card, Chip, GrowthBar } from '../components/ui'
 import { BADGES, CURRENT_USER } from '../lib/user'
@@ -9,6 +9,7 @@ import { getStreakDays } from '../lib/streak'
  * Perfil do usuário — avatar Brotin, level, XP, badges, plantas favoritas.
  */
 export function Perfil() {
+  const navigate = useNavigate()
   const u = CURRENT_USER
   const streak = getStreakDays()
   const unlockedCount = UNLOCKED_SPECIES_IDS.size
@@ -35,7 +36,7 @@ export function Perfil() {
         <button
           aria-label="Configurações"
           className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/15 backdrop-blur-md flex items-center justify-center text-base z-10"
-          onClick={() => alert('Tela de configurações ainda em construção 🌱')}
+          onClick={() => navigate('/config')}
         >
           ⚙️
         </button>

@@ -12,6 +12,9 @@ import { Rega } from './screens/Rega'
 import { Perfil } from './screens/Perfil'
 import { Ranking } from './screens/Ranking'
 import { Notificacoes } from './screens/Notificacoes'
+import { Config } from './screens/Config'
+import { PlantaDetalhe } from './screens/PlantaDetalhe'
+import { PostDetalhe } from './screens/PostDetalhe'
 import { Placeholder } from './screens/Placeholder'
 import { AppLayout } from './components/AppLayout'
 
@@ -34,10 +37,7 @@ export default function App() {
           <Route element={<AppLayout />}>
             <Route path="/home" element={<Feed />} />
             <Route path="/jardim" element={<Jardim />} />
-            <Route
-              path="/jardim/:speciesId"
-              element={<Placeholder title="Detalhe da Espécie" next={{ label: 'Voltar ao Jardim', to: '/jardim' }} />}
-            />
+            <Route path="/jardim/:speciesId" element={<PlantaDetalhe />} />
             <Route path="/plantacao" element={<Plantacao />} />
             <Route path="/streak" element={<Streak />} />
             <Route path="/perfil" element={<Perfil />} />
@@ -49,7 +49,8 @@ export default function App() {
           <Route path="/streak/rega" element={<Rega />} />
           <Route path="/ranking" element={<Ranking />} />
           <Route path="/notificacoes" element={<Notificacoes />} />
-          <Route path="/config" element={<Placeholder title="Configurações" />} />
+          <Route path="/config" element={<Config />} />
+          <Route path="/post/:postId" element={<PostDetalhe />} />
 
           <Route
             path="*"
