@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Brotin } from '../components/Brotin'
 import { PlantSprite } from '../components/PlantSprite'
@@ -25,6 +26,7 @@ export function PlantaDetalhe() {
   }
 
   const unlocked = UNLOCKED_SPECIES_IDS.has(species.id)
+  const [holoVisible, setHoloVisible] = useState(false)
 
   // Mock: nível da planta baseado em quantas regas tem
   const allWaterings = getWaterings()
@@ -61,7 +63,7 @@ export function PlantaDetalhe() {
       <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-4">
         {/* HERO — ilustração SVG da planta sobre disco com raios */}
         <div
-          className="relative rounded-3xl overflow-hidden p-6 flex items-center justify-center"
+          className="relative rounded-3xl overflow-hidden p-6 flex items-center justify-center cursor-pointer select-none"
           style={{
             aspectRatio: '5 / 4',
             background:
@@ -69,6 +71,8 @@ export function PlantaDetalhe() {
             border: '2px solid var(--color-earth-200)',
             boxShadow: '0 4px 0 var(--color-earth-300)',
           }}
+          onClick={() => setHoloVisible((v) => !v)}
+          title="Toque para ver tag holográfica"
         >
           {/* 8 raios em estrela */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden>
@@ -103,6 +107,20 @@ export function PlantaDetalhe() {
                 {species.rarity === 'epic' ? '🌟 ÉPICA' : '✨ RARA'}
               </Chip>
             </div>
+          )}
+
+          {/* Dica de interação */}
+          {!holoVisible && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
+              <div className="px-2 py-1 rounded-full text-[10px] font-bold text-[var(--color-leaf-700)] bg-white/70 backdrop-blur-sm border border-[var(--color-leaf-300)] anim-pulse-soft">
+                ✦ Toque para tag holográfica
+              </div>
+            </div>
+          )}
+
+          {/* Hologram Tag — aparece ao tocar */}
+          {holoVisible && (
+            <HologramTag species={species} level={plantLevel} onClose={() => setHoloVisible(false)} />
           )}
         </div>
 
@@ -231,6 +249,126 @@ export function PlantaDetalhe() {
         )}
       </div>
     </main>
+  )
+}
+
+/* ─── Hologram Tag ──────────────────────────────────────────── */
+function HologramTag({
+  species,
+  level,
+  onClose,
+}: {
+  species: import('../lib/species').Species
+  level: number
+  onClose: (e: React.MouseEvent) => void
+}) {
+  return (
+    <div
+      className="absolute inset-0 z-20 flex items-center justify-center"
+      style={{ perspective: '600px' }}
+      onClick={(e) => { e.stopPropagation(); onClose(e) }}
+    >
+      {/* Fundo escurecido com blur */}
+      <div
+        className="absolute inset-0"
+        style={{ background: 'rgba(0,10,20,0.65)', backdropFilter: 'blur(2px)' }}
+      />
+
+      {/* Plaquinha 3D */}
+      <div
+        style={{
+          position: 'relative',
+          transform: 'rotateX(8deg) rotateY(-4deg)',
+          transformStyle: 'preserve-3d',
+          animation: 'holoFloat 3s ease-in-out infinite',
+          border: '1.5px solid rgba(0,255,210,0.6)',
+          borderRadius: 16,
+          padding: '14px 18px',
+          background: 'linear-gradient(160deg, rgba(0,20,40,0.92) 0%, rgba(0,10,30,0.96) 100%)',
+          boxShadow: '0 0 24px rgba(0,255,210,0.35), 0 0 60px rgba(0,255,210,0.12), inset 0 0 20px rgba(0,255,210,0.06)',
+          minWidth: 200,
+          maxWidth: 240,
+          overflow: 'hidden',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Scanlines */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,255,210,0.04) 3px, rgba(0,255,210,0.04) 4px)',
+            pointerEvents: 'none',
+            borderRadius: 16,
+          }}
+        />
+
+        {/* Linha superior decorativa */}
+        <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(0,255,210,0.8), transparent)', marginBottom: 10 }} />
+
+        {/* Cabeçalho: ESPÉCIE + emoji */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <div style={{ fontSize: 28 }}>{species.emoji}</div>
+          <div>
+            <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.12em', color: 'rgba(0,255,210,0.7)', textTransform: 'uppercase' }}>
+              ✦ ECOWIT AR TAG
+            </div>
+            <div style={{ fontSize: 15, fontWeight: 900, color: '#e0fff8', lineHeight: 1.1 }}>
+              {species.popularName}
+            </div>
+          </div>
+        </div>
+
+        {/* Nome científico */}
+        <div style={{ fontSize: 10, fontStyle: 'italic', color: 'rgba(0,255,210,0.55)', marginBottom: 10 }}>
+          {species.scientificName}
+        </div>
+
+        {/* Stats grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 12px', marginBottom: 10 }}>
+          {[
+            { label: 'NÍVEL', value: `${level}` },
+            { label: 'RARIDADE', value: species.rarity ? species.rarity.toUpperCase() : 'COMUM' },
+            { label: 'REGA', value: `${species.waterDays}d` },
+            { label: 'LUZ', value: species.sunNeeds },
+          ].map((s) => (
+            <div key={s.label}>
+              <div style={{ fontSize: 8, fontWeight: 700, color: 'rgba(0,255,210,0.5)', letterSpacing: '0.1em' }}>{s.label}</div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#b0ffe8' }}>{s.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Linha inferior */}
+        <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, rgba(0,255,210,0.8), transparent)', marginBottom: 8 }} />
+
+        {/* Cuidado */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontSize: 9, color: 'rgba(0,255,210,0.5)', fontWeight: 700 }}>DIFICULDADE: {species.careLevel.toUpperCase()}</div>
+          <div
+            style={{
+              fontSize: 9,
+              fontWeight: 800,
+              color: '#0fffe0',
+              border: '1px solid rgba(0,255,210,0.4)',
+              borderRadius: 20,
+              padding: '2px 8px',
+              letterSpacing: '0.08em',
+            }}
+          >
+            META
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes holoFloat {
+          0%, 100% { transform: rotateX(8deg) rotateY(-4deg) translateY(0px); }
+          50% { transform: rotateX(4deg) rotateY(4deg) translateY(-6px); }
+        }
+      `}</style>
+    </div>
   )
 }
 
