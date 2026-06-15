@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Brotin } from '../components/Brotin'
+import { ARView } from '../components/ARView'
 import { Button, Card, Chip } from '../components/ui'
 import { SPECIES_CATALOG, UNLOCKED_SPECIES_IDS, type Species } from '../lib/species'
 import { identify, type IdentifyResult } from '../lib/identify'
@@ -114,7 +115,7 @@ export function ScanResult() {
             }}
           >
             <span style={{ fontSize: 16 }}>✦</span>
-            Ver em AR — Tag Holográfica
+            Ver no meu espaço (AR)
           </button>
         )}
 
@@ -244,205 +245,15 @@ export function ScanResult() {
         <UnlockCelebration species={selectedSpecies} onClose={dismissCelebration} />
       )}
 
-      {arMode && photo && primarySpecies && (
-        <ARScanOverlay
-          photo={photo}
-          species={primarySpecies}
-          confidence={primary!.topMatch.confidence}
+      {arMode && primarySpecies && (
+        <ARView
+          title={primarySpecies.popularName}
+          species={[primarySpecies]}
+          layout="front"
           onClose={() => setArMode(false)}
         />
       )}
     </main>
-  )
-}
-
-/* ─── AR Scan Overlay ───────────────────────────────────────── */
-function ARScanOverlay({
-  photo,
-  species,
-  confidence,
-  onClose,
-}: {
-  photo: string
-  species: import('../lib/species').Species
-  confidence: number
-  onClose: () => void
-}) {
-  const scanRef = useRef<HTMLDivElement>(null)
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col">
-      {/* Foto como "câmera" de fundo */}
-      <div ref={scanRef} className="relative flex-1 overflow-hidden">
-        <img src={photo} alt="" className="absolute inset-0 w-full h-full object-cover" />
-
-        {/* Escurecimento nas bordas */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.6) 100%)' }}
-        />
-
-        {/* Scanlines sobre a foto */}
-        <div
-          aria-hidden
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,255,200,0.04) 3px, rgba(0,255,200,0.04) 4px)',
-          }}
-        />
-
-        {/* Canto-brackets AR (como mira do scan) */}
-        {[
-          { top: '15%', left: '8%', borders: 'border-t-2 border-l-2' },
-          { top: '15%', right: '8%', borders: 'border-t-2 border-r-2' },
-          { bottom: '15%', left: '8%', borders: 'border-b-2 border-l-2' },
-          { bottom: '15%', right: '8%', borders: 'border-b-2 border-r-2' },
-        ].map((b, i) => (
-          <div
-            key={i}
-            className={`absolute w-8 h-8 ${b.borders} rounded-sm anim-pulse-soft`}
-            style={{
-              top: b.top, left: b.left, right: b.right, bottom: b.bottom,
-              borderColor: 'rgba(0,255,200,0.8)',
-              animationDelay: `${i * 0.12}s`,
-            }}
-          />
-        ))}
-
-        {/* Badge flutuante — nome da planta */}
-        <div
-          className="absolute anim-float"
-          style={{ top: '12%', left: '50%', transform: 'translateX(-50%)', animationDuration: '2.5s' }}
-        >
-          <div
-            style={{
-              background: 'rgba(0,10,20,0.82)',
-              border: '1.5px solid rgba(0,255,200,0.6)',
-              borderRadius: 12,
-              padding: '8px 16px',
-              backdropFilter: 'blur(6px)',
-              boxShadow: '0 0 20px rgba(0,255,200,0.25)',
-              textAlign: 'center',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <div style={{ fontSize: 8, fontWeight: 800, color: 'rgba(0,255,200,0.7)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-              ✦ ECOWIT AR · IDENTIFICADA
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: '#e0fff8', lineHeight: 1.1 }}>
-              {species.emoji} {species.popularName}
-            </div>
-            <div style={{ fontSize: 10, fontStyle: 'italic', color: 'rgba(0,255,200,0.5)' }}>
-              {species.scientificName}
-            </div>
-          </div>
-        </div>
-
-        {/* Badge confiança — canto inferior esquerdo */}
-        <div
-          className="absolute anim-float"
-          style={{ bottom: '18%', left: '6%', animationDuration: '3s', animationDelay: '0.4s' }}
-        >
-          <div
-            style={{
-              background: 'rgba(0,10,20,0.82)',
-              border: '1.5px solid rgba(0,255,200,0.45)',
-              borderRadius: 10,
-              padding: '6px 12px',
-              backdropFilter: 'blur(4px)',
-            }}
-          >
-            <div style={{ fontSize: 8, color: 'rgba(0,255,200,0.6)', fontWeight: 700, letterSpacing: '0.1em' }}>CERTEZA</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#0fffe0' }}>{Math.round(confidence * 100)}%</div>
-          </div>
-        </div>
-
-        {/* Badge XP — canto inferior direito */}
-        <div
-          className="absolute anim-float"
-          style={{ bottom: '18%', right: '6%', animationDuration: '2.8s', animationDelay: '0.8s' }}
-        >
-          <div
-            style={{
-              background: 'rgba(0,10,20,0.82)',
-              border: '1.5px solid rgba(0,255,200,0.45)',
-              borderRadius: 10,
-              padding: '6px 12px',
-              backdropFilter: 'blur(4px)',
-              textAlign: 'center',
-            }}
-          >
-            <div style={{ fontSize: 8, color: 'rgba(0,255,200,0.6)', fontWeight: 700, letterSpacing: '0.1em' }}>XP</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#0fffe0' }}>+50</div>
-          </div>
-        </div>
-
-        {/* Badge cuidado — meio-direita */}
-        <div
-          className="absolute anim-float"
-          style={{ top: '42%', right: '5%', animationDuration: '3.2s', animationDelay: '0.2s' }}
-        >
-          <div
-            style={{
-              background: 'rgba(0,10,20,0.82)',
-              border: '1.5px solid rgba(0,255,200,0.45)',
-              borderRadius: 10,
-              padding: '6px 12px',
-              backdropFilter: 'blur(4px)',
-            }}
-          >
-            <div style={{ fontSize: 8, color: 'rgba(0,255,200,0.6)', fontWeight: 700, letterSpacing: '0.1em' }}>REGA</div>
-            <div style={{ fontSize: 13, fontWeight: 900, color: '#b0ffe8' }}>💧 {species.waterDays}d</div>
-            <div style={{ fontSize: 8, color: 'rgba(0,255,200,0.6)', fontWeight: 700, letterSpacing: '0.1em', marginTop: 4 }}>LUZ</div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: '#b0ffe8' }}>☀️ {species.sunNeeds}</div>
-          </div>
-        </div>
-
-        {/* Linha de scan animada */}
-        <div
-          className="absolute left-0 right-0 pointer-events-none"
-          style={{
-            height: 2,
-            background: 'linear-gradient(90deg, transparent, rgba(0,255,200,0.8), transparent)',
-            animation: 'scanLine 3s linear infinite',
-            top: 0,
-          }}
-        />
-
-        <style>{`
-          @keyframes scanLine {
-            0% { top: 10%; opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { top: 90%; opacity: 0; }
-          }
-        `}</style>
-      </div>
-
-      {/* Footer */}
-      <div
-        className="px-4 py-4 flex items-center justify-between"
-        style={{ background: 'rgba(0,5,15,0.95)', borderTop: '1px solid rgba(0,255,200,0.2)' }}
-      >
-        <div style={{ color: 'rgba(0,255,200,0.6)', fontSize: 11, fontWeight: 700, letterSpacing: '0.1em' }}>
-          ✦ MODO AR · ECOWIT
-        </div>
-        <button
-          onClick={onClose}
-          style={{
-            background: 'rgba(0,255,200,0.1)',
-            border: '1.5px solid rgba(0,255,200,0.5)',
-            borderRadius: 20,
-            padding: '6px 18px',
-            color: '#0fffe0',
-            fontWeight: 800,
-            fontSize: 13,
-          }}
-        >
-          Fechar
-        </button>
-      </div>
-    </div>
   )
 }
 

@@ -88,9 +88,9 @@ export function PlantaDetalhe() {
             ))}
           </div>
 
-          {/* Sprite SVG centralizado */}
-          <svg viewBox="-40 -50 80 80" className="w-48 h-48 relative z-10 anim-float">
-            <PlantSprite species={species} scale={2.2} />
+          {/* Sprite SVG centralizado — viewBox enquadrado no conteúdo real da planta */}
+          <svg viewBox="-26 -44 52 54" className="w-64 h-64 max-w-[80%] relative z-10 anim-float">
+            <PlantSprite species={species} scale={1} />
           </svg>
 
           {/* Badge de nível */}
