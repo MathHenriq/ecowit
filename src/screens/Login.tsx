@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Brotin } from '../components/Brotin'
 import { Button } from '../components/ui'
@@ -8,10 +9,16 @@ import { Button } from '../components/ui'
  */
 export function Login() {
   const navigate = useNavigate()
+  const [mode, setMode] = useState<'entrar' | 'criar'>('entrar')
 
-  function handleLogin() {
-    // TODO: integrar supabase.auth.signInWithPassword
-    navigate('/onboarding')
+  function handleSubmit() {
+    // TODO: integrar supabase.auth.signInWithPassword / signUp
+    const onboardingDone = localStorage.getItem('ecowit:onboardingDone') === '1'
+    if (mode === 'entrar' && onboardingDone) {
+      navigate('/home', { replace: true })
+    } else {
+      navigate('/onboarding')
+    }
   }
 
   return (
@@ -27,10 +34,20 @@ export function Login() {
 
       <div className="w-full max-w-sm card-squish flex flex-col gap-4">
         <div className="flex gap-2">
-          <button className="flex-1 px-4 py-2 rounded-full font-bold text-sm bg-[var(--color-leaf-500)] text-white">
+          <button
+            onClick={() => setMode('entrar')}
+            className={`flex-1 px-4 py-2 rounded-full font-bold text-sm transition-colors ${
+              mode === 'entrar' ? 'bg-[var(--color-leaf-500)] text-white' : 'text-[var(--color-ink-faint)]'
+            }`}
+          >
             Entrar
           </button>
-          <button className="flex-1 px-4 py-2 rounded-full font-bold text-sm text-[var(--color-ink-faint)]">
+          <button
+            onClick={() => setMode('criar')}
+            className={`flex-1 px-4 py-2 rounded-full font-bold text-sm transition-colors ${
+              mode === 'criar' ? 'bg-[var(--color-leaf-500)] text-white' : 'text-[var(--color-ink-faint)]'
+            }`}
+          >
             Criar conta
           </button>
         </div>
@@ -53,14 +70,18 @@ export function Login() {
           />
         </label>
 
-        <Button full onClick={handleLogin}>
-          Entrar
+        <Button full onClick={handleSubmit}>
+          {mode === 'entrar' ? 'Entrar' : 'Criar conta'}
         </Button>
 
-        <p className="text-center text-xs text-[var(--color-ink-faint)]">
-          Novo por aqui?{' '}
-          <button className="font-bold text-[var(--color-leaf-700)]">Criar conta grátis</button>
-        </p>
+        {mode === 'entrar' && (
+          <p className="text-center text-xs text-[var(--color-ink-faint)]">
+            Novo por aqui?{' '}
+            <button onClick={() => setMode('criar')} className="font-bold text-[var(--color-leaf-700)]">
+              Criar conta grátis
+            </button>
+          </p>
+        )}
       </div>
     </main>
   )

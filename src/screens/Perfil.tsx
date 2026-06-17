@@ -163,13 +163,16 @@ export function Perfil() {
 
         {/* Sair / Editar */}
         <div className="flex flex-col gap-2 mt-2">
-          <button className="text-sm font-bold py-2 text-[var(--color-ink-soft)]">
+          <button
+            onClick={() => navigate('/config')}
+            className="text-sm font-bold py-2 text-[var(--color-ink-soft)]"
+          >
             Editar perfil
           </button>
           <button
             onClick={() => {
               if (confirm('Sair da conta?')) {
-                localStorage.removeItem('ecowit:onboardingDone')
+                // Não limpa onboardingDone/espécies — é progresso da conta, não da sessão.
                 window.location.href = '/login'
               }
             }}

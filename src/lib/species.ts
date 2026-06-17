@@ -56,7 +56,9 @@ export const SPECIES_CATALOG: Species[] = [
 ]
 
 /** IDs das espécies que o usuário "tem" desbloqueadas (mock — vai virar query Supabase). */
-export const UNLOCKED_SPECIES_IDS = new Set<string>([
+const UNLOCKED_STORAGE_KEY = 'ecowit:unlockedSpecies'
+
+const DEFAULT_UNLOCKED = [
   'echeveria-elegans',
   'pilea',
   'monstera-deliciosa',
@@ -69,7 +71,27 @@ export const UNLOCKED_SPECIES_IDS = new Set<string>([
   'narciso',
   'strelitzia',
   'orquidea-phalaenopsis',
-])
+]
+
+function loadUnlockedIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(UNLOCKED_STORAGE_KEY)
+    if (raw) return new Set(JSON.parse(raw) as string[])
+  } catch {
+    // ignore, cai no default
+  }
+  return new Set(DEFAULT_UNLOCKED)
+}
+
+class PersistedSpeciesSet extends Set<string> {
+  add(id: string) {
+    super.add(id)
+    localStorage.setItem(UNLOCKED_STORAGE_KEY, JSON.stringify([...this]))
+    return this
+  }
+}
+
+export const UNLOCKED_SPECIES_IDS: Set<string> = new PersistedSpeciesSet(loadUnlockedIds())
 
 export function isUnlocked(id: string): boolean {
   return UNLOCKED_SPECIES_IDS.has(id)
