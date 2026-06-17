@@ -154,7 +154,9 @@ export function Perfil() {
                 >
                   <div className="text-3xl mb-1">{s.emoji}</div>
                   <div className="text-[11px] font-extrabold text-center leading-tight">{s.popularName}</div>
-                  <Chip tone="sun" className="mt-1">Nv. {Math.floor(Math.random() * 4 + 2)}</Chip>
+                  <Chip tone="sun" className="mt-1">
+                    Nv. {(SPECIES_CATALOG.findIndex((sp) => sp.id === s.id) % 4) + 2}
+                  </Chip>
                 </Link>
               ))}
             </div>

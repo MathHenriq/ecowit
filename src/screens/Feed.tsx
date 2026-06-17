@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Brotin } from '../components/Brotin'
 import { Chip } from '../components/ui'
+import { getStreakDays, getWaterings, todayISO } from '../lib/streak'
 
 /**
  * Feed — tela inicial pós-login. Timeline social estilo Instagram com vibe eco.
@@ -61,6 +62,9 @@ const MOCK_POSTS: Post[] = [
 ]
 
 export function Feed() {
+  const streak = getStreakDays()
+  const todayDone = getWaterings().some((w) => w.date === todayISO() && w.photo)
+
   return (
     <main className="flex-1 flex flex-col min-h-0">
       {/* Header */}
@@ -103,8 +107,18 @@ export function Feed() {
       >
         <div className="text-2xl anim-pulse-soft">🔥</div>
         <div className="flex-1">
-          <div className="text-sm font-bold">Você está no dia 0 da sequência</div>
-          <div className="text-xs text-[var(--color-ink-faint)]">Registre a primeira rega pra começar →</div>
+          <div className="text-sm font-bold">
+            {streak > 0
+              ? `Você está no dia ${streak} da sequência`
+              : 'Você ainda não tem uma sequência ativa'}
+          </div>
+          <div className="text-xs text-[var(--color-ink-faint)]">
+            {todayDone
+              ? 'Rega de hoje registrada — volte amanhã! 🌿'
+              : streak > 0
+              ? 'Regue hoje pra manter a sequência →'
+              : 'Registre a primeira rega pra começar →'}
+          </div>
         </div>
       </Link>
 

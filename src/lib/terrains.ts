@@ -3,6 +3,9 @@
  * Cada terreno é uma cena isométrica própria com capacidade limitada.
  */
 
+import { getWaterings, todayISO } from './streak'
+import { SPECIES_CATALOG } from './species'
+
 export interface PlantedSpot {
   speciesId: string
   /** Posição relativa dentro do terreno isométrico (0-100 em ambos os eixos). */
@@ -94,4 +97,31 @@ export const TERRAINS: Terrain[] = [
 
 export function isTerrainUnlocked(t: Terrain): boolean {
   return USER_LEVEL >= t.unlockedAt
+}
+
+/** Dias desde a última rega relevante (da própria espécie, ou geral se não houver registro específico). */
+function daysSinceWatered(speciesId: string): number | null {
+  const waterings = getWaterings().filter((w) => w.photo)
+  const matching = waterings.filter((w) => w.speciesId === speciesId)
+  const relevant = matching.length > 0 ? matching : waterings
+  if (relevant.length === 0) return null
+  const lastDate = relevant.map((w) => w.date).sort().pop()!
+  const diffMs = new Date(todayISO()).getTime() - new Date(lastDate).getTime()
+  return Math.round(diffMs / 86_400_000)
+}
+
+/** Deriva o status real (saudável/sedenta) com base no histórico de regas. */
+export function computePlantStatus(speciesId: string): 'healthy' | 'thirsty' {
+  const waterDays = SPECIES_CATALOG.find((s) => s.id === speciesId)?.waterDays ?? 7
+  const days = daysSinceWatered(speciesId)
+  if (days === null) return 'thirsty'
+  return days >= waterDays ? 'thirsty' : 'healthy'
+}
+
+/** Retorna o terreno com o status de cada planta recalculado a partir de dados reais de rega. */
+export function withLiveStatus(terrain: Terrain): Terrain {
+  return {
+    ...terrain,
+    plants: terrain.plants.map((p) => ({ ...p, status: computePlantStatus(p.speciesId) })),
+  }
 }

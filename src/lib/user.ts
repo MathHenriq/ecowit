@@ -2,7 +2,7 @@
  * Estado do usuário logado (mock — vai virar tabela `profiles` no Supabase).
  */
 
-import { getStreakDays } from './streak'
+import { getStreakDays, getWaterings } from './streak'
 import { UNLOCKED_SPECIES_IDS } from './species'
 
 export interface UserProfile {
@@ -14,6 +14,24 @@ export interface UserProfile {
   joinedAt: string
 }
 
+const XP_PER_LEVEL = 250
+
+/** Soma o XP de todas as regas registradas + bônus por espécie desbloqueada. */
+function computeProfile(): UserProfile {
+  const wateringXp = getWaterings().reduce((sum, w) => sum + (w.xp || 0), 0)
+  const totalXp = wateringXp + UNLOCKED_SPECIES_IDS.size * 50
+  const level = Math.floor(totalXp / XP_PER_LEVEL) + 1
+  const xpIntoLevel = totalXp % XP_PER_LEVEL
+  return {
+    name: 'Lucas Verdejante',
+    handle: 'lucasv',
+    level,
+    xp: xpIntoLevel,
+    xpToNextLevel: XP_PER_LEVEL,
+    joinedAt: '2026-03-01',
+  }
+}
+
 export interface Badge {
   id: string
   name: string
@@ -23,14 +41,12 @@ export interface Badge {
   isUnlocked: () => boolean
 }
 
-export const CURRENT_USER: UserProfile = {
-  name: 'Lucas Verdejante',
-  handle: 'lucasv',
-  level: 12,
-  xp: 2_450,
-  xpToNextLevel: 3_000,
-  joinedAt: '2026-03-01',
-}
+/** Lê sempre o estado real (waterings/espécies) ao acessar qualquer campo. */
+export const CURRENT_USER: UserProfile = new Proxy({} as UserProfile, {
+  get(_target, prop) {
+    return computeProfile()[prop as keyof UserProfile]
+  },
+})
 
 export const BADGES: Badge[] = [
   { id: 'primeiro-broto',   name: 'Primeiro Broto',  emoji: '🌱', description: 'Desbloqueou sua 1ª espécie',         isUnlocked: () => UNLOCKED_SPECIES_IDS.size >= 1 },
