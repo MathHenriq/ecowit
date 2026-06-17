@@ -28,15 +28,26 @@ const FILTERS: { id: Filter; label: string }[] = [
 
 export function Jardim() {
   const [filter, setFilter] = useState<Filter>('all')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [query, setQuery] = useState('')
 
   const total = SPECIES_CATALOG.length
   const unlockedCount = UNLOCKED_SPECIES_IDS.size
 
   const visibleSpecies = useMemo(() => {
-    if (filter === 'all') return SPECIES_CATALOG
-    if (filter === 'unlocked') return SPECIES_CATALOG.filter((s) => UNLOCKED_SPECIES_IDS.has(s.id))
-    return SPECIES_CATALOG.filter((s) => s.category === filter)
-  }, [filter])
+    let list = SPECIES_CATALOG
+    if (filter === 'unlocked') list = list.filter((s) => UNLOCKED_SPECIES_IDS.has(s.id))
+    else if (filter !== 'all') list = list.filter((s) => s.category === filter)
+
+    const q = query.trim().toLowerCase()
+    if (q) {
+      list = list.filter((s) => {
+        const visibleName = UNLOCKED_SPECIES_IDS.has(s.id) ? `${s.popularName} ${s.scientificName}` : ''
+        return visibleName.toLowerCase().includes(q)
+      })
+    }
+    return list
+  }, [filter, query])
 
   // Quebra em "prateleiras" de 4 em 4
   const shelves = useMemo(() => {
@@ -59,11 +70,32 @@ export function Jardim() {
         </div>
         <button
           aria-label="Buscar"
-          className="w-10 h-10 rounded-full bg-white border-2 border-[var(--color-earth-200)] shadow-[0_3px_0_var(--color-earth-300)] flex items-center justify-center"
+          onClick={() => setSearchOpen((v) => !v)}
+          className="w-10 h-10 rounded-full flex items-center justify-center"
+          style={{
+            background: searchOpen ? 'var(--color-leaf-500)' : 'white',
+            color: searchOpen ? 'white' : undefined,
+            border: '2px solid var(--color-earth-200)',
+            boxShadow: '0 3px 0 var(--color-earth-300)',
+          }}
         >
           🔍
         </button>
       </header>
+
+      {/* Campo de busca */}
+      {searchOpen && (
+        <div className="px-4 pb-2">
+          <input
+            autoFocus
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar espécie pelo nome…"
+            className="w-full px-4 py-2.5 rounded-full border-2 border-[var(--color-earth-300)] text-sm focus:border-[var(--color-leaf-500)] focus:outline-none"
+          />
+        </div>
+      )}
 
       {/* Tabs filtro */}
       <div className="px-4 mb-2">

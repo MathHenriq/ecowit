@@ -73,14 +73,15 @@ function TabLink({ to, label, icon }: { to: string; label: string; icon: string 
     >
       {({ isActive }) => (
         <>
-          <div className="relative text-xl">
+          <div
+            className="relative text-xl flex items-center justify-center rounded-xl transition-colors"
+            style={{
+              width: 34,
+              height: 28,
+              background: isActive ? 'var(--color-leaf-100)' : 'transparent',
+            }}
+          >
             {icon}
-            {isActive && (
-              <div
-                className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
-                style={{ background: 'var(--color-leaf-700)' }}
-              />
-            )}
           </div>
           <span className="text-[10px] font-extrabold">{label}</span>
         </>
