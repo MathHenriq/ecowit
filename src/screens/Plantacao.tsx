@@ -5,7 +5,7 @@ import { ARView } from '../components/ARView'
 import { Brotin } from '../components/Brotin'
 import { Chip } from '../components/ui'
 import { SPECIES_CATALOG, type Species } from '../lib/species'
-import { TERRAINS, USER_LEVEL, isTerrainUnlocked } from '../lib/terrains'
+import { TERRAINS, USER_LEVEL, isTerrainUnlocked, withLiveStatus } from '../lib/terrains'
 
 /**
  * Plantação — carrossel de terrenos isométricos progressivos.
@@ -17,7 +17,7 @@ export function Plantacao() {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [arOpen, setArOpen] = useState(false)
 
-  const active = TERRAINS[activeIdx]
+  const active = useMemo(() => withLiveStatus(TERRAINS[activeIdx]), [activeIdx])
   const activeUnlocked = isTerrainUnlocked(active)
 
   // Stats agregados do terreno ativo
