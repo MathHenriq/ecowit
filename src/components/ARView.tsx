@@ -8,19 +8,17 @@ import type { Species } from '../lib/species'
  * Diferente da versão anterior (giroscópio + sprite 2D "colado" na tela, que
  * só girava e não tinha noção do mundo real), aqui a AR é delegada pro
  * visualizador nativo do aparelho:
- *  - Android (Chrome): WebXR / Scene Viewer — rastreamento real de superfície,
- *    a planta fica ancorada no chão da sua casa, oclusão e escala reais.
- *  - iOS: ainda não temos um arquivo USDZ (formato exigido pelo AR Quick Look
- *    da Apple), então cai num visualizador 3D interativo de altíssima
- *    qualidade (gira/zoom com o dedo) em vez da AR "no chão" — já é
- *    infinitamente melhor que girar a tela sem sentido, mas a AR plena no
- *    iOS é um próximo passo (gerar .usdz por espécie).
+ *  - Android (Chrome): WebXR / Scene Viewer (.glb) — rastreamento real de
+ *    superfície, a planta fica ancorada no chão da sua casa.
+ *  - iOS: AR Quick Look (.usdz) — mesmo princípio, ancoragem real no chão
+ *    via câmera, nativo do iOS.
  *
- * MVP: usamos um modelo .glb genérico de "vaso + planta" (placeholder),
- * já que ainda não temos modelagem 3D por espécie real.
+ * MVP: usamos um modelo genérico de "vaso + planta" (placeholder) nos dois
+ * formatos, já que ainda não temos modelagem 3D por espécie real.
  */
 
 const PLACEHOLDER_MODEL = '/models/plant-placeholder.glb'
+const PLACEHOLDER_MODEL_IOS = '/models/plant-placeholder.usdz'
 
 interface ARViewProps {
   title: string
@@ -80,6 +78,7 @@ export function ARView({ title, species, layout = 'ring', onClose }: ARViewProps
             ref={viewerRef as never}
             key={active.id}
             src={PLACEHOLDER_MODEL}
+            ios-src={PLACEHOLDER_MODEL_IOS}
             alt={`Modelo 3D de ${active.popularName}`}
             ar
             ar-modes="webxr scene-viewer quick-look"
@@ -148,7 +147,7 @@ export function ARView({ title, species, layout = 'ring', onClose }: ARViewProps
               fontWeight: 700,
             }}
           >
-            👆 Arraste pra girar · toque em "Ver no meu espaço" pra AR real no Android
+            👆 Arraste pra girar · toque em "Ver no meu espaço" pra AR real
           </div>
         </div>
       </div>

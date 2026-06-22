@@ -6,6 +6,7 @@ import type { DetailedHTMLProps, HTMLAttributes } from 'react'
 
 type ModelViewerAttributes = DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement> & {
   src?: string
+  'ios-src'?: string
   alt?: string
   ar?: boolean
   'ar-modes'?: string
