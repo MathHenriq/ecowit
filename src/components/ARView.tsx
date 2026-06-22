@@ -1,6 +1,6 @@
 import '@google/model-viewer'
 import { useRef, useState } from 'react'
-import type { Species } from '../lib/species'
+import type { Species, SpeciesCategory } from '../lib/species'
 
 /**
  * ARView — AR real via <model-viewer> (Google).
@@ -13,12 +13,17 @@ import type { Species } from '../lib/species'
  *  - iOS: AR Quick Look (.usdz) — mesmo princípio, ancoragem real no chão
  *    via câmera, nativo do iOS.
  *
- * MVP: usamos um modelo genérico de "vaso + planta" (placeholder) nos dois
- * formatos, já que ainda não temos modelagem 3D por espécie real.
+ * MVP: ainda não temos modelagem 3D por espécie real, então usamos um
+ * placeholder por categoria (cacto, suculenta, flor, erva, tropical, árvore)
+ * — silhueta reconhecível, mais honesto que um "vaso genérico" único.
  */
 
-const PLACEHOLDER_MODEL = '/models/plant-placeholder.glb'
-const PLACEHOLDER_MODEL_IOS = '/models/plant-placeholder.usdz'
+function modelFor(category: SpeciesCategory) {
+  return {
+    glb: `/models/plant-${category}.glb`,
+    usdz: `/models/plant-${category}.usdz`,
+  }
+}
 
 interface ARViewProps {
   title: string
@@ -77,8 +82,8 @@ export function ARView({ title, species, layout = 'ring', onClose }: ARViewProps
           <model-viewer
             ref={viewerRef as never}
             key={active.id}
-            src={PLACEHOLDER_MODEL}
-            ios-src={PLACEHOLDER_MODEL_IOS}
+            src={modelFor(active.category).glb}
+            ios-src={modelFor(active.category).usdz}
             alt={`Modelo 3D de ${active.popularName}`}
             ar
             ar-modes="webxr scene-viewer quick-look"
