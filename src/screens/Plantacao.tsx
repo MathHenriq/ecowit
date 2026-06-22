@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { IsoDiorama } from '../components/IsoDiorama'
-import { ARView } from '../components/ARView'
+import { ARLoading } from '../components/ARLoading'
 import { Brotin } from '../components/Brotin'
 import { Chip } from '../components/ui'
 import { SPECIES_CATALOG, type Species } from '../lib/species'
@@ -12,6 +12,8 @@ import { TERRAINS, USER_LEVEL, isTerrainUnlocked, withLiveStatus } from '../lib/
  * Cada terreno: cena 3D-ish com plantas + UI overlay.
  * Terrenos bloqueados aparecem com névoa (não cadeado tradicional).
  */
+const ARView = lazy(() => import('../components/ARView').then((m) => ({ default: m.ARView })))
+
 export function Plantacao() {
   const [activeIdx, setActiveIdx] = useState(0)
   const scrollerRef = useRef<HTMLDivElement>(null)
@@ -199,12 +201,14 @@ export function Plantacao() {
       </div>
 
       {arOpen && (
-        <ARView
-          title={active.name}
-          species={arSpecies}
-          layout="ring"
-          onClose={() => setArOpen(false)}
-        />
+        <Suspense fallback={<ARLoading />}>
+          <ARView
+            title={active.name}
+            species={arSpecies}
+            layout="ring"
+            onClose={() => setArOpen(false)}
+          />
+        </Suspense>
       )}
     </main>
   )
