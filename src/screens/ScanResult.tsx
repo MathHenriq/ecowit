@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Brotin } from '../components/Brotin'
-import { ARView } from '../components/ARView'
+import { ARLoading } from '../components/ARLoading'
 import { Button, Card, Chip } from '../components/ui'
 import { SPECIES_CATALOG, UNLOCKED_SPECIES_IDS, type Species } from '../lib/species'
 import { identify, type IdentifyResult } from '../lib/identify'
@@ -11,6 +11,8 @@ import { identify, type IdentifyResult } from '../lib/identify'
  * Mostra a hipótese principal do PlantNet + alternativas.
  * Botão "Usar IA pra confirmar" chama Gemini Vision como segunda opinião.
  */
+const ARView = lazy(() => import('../components/ARView').then((m) => ({ default: m.ARView })))
+
 export function ScanResult() {
   const navigate = useNavigate()
   const [photo, setPhoto] = useState<string | null>(null)
@@ -246,12 +248,14 @@ export function ScanResult() {
       )}
 
       {arMode && primarySpecies && (
-        <ARView
-          title={primarySpecies.popularName}
-          species={[primarySpecies]}
-          layout="front"
-          onClose={() => setArMode(false)}
-        />
+        <Suspense fallback={<ARLoading />}>
+          <ARView
+            title={primarySpecies.popularName}
+            species={[primarySpecies]}
+            layout="front"
+            onClose={() => setArMode(false)}
+          />
+        </Suspense>
       )}
     </main>
   )
