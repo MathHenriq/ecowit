@@ -13,9 +13,14 @@ import type { Species, SpeciesCategory } from '../lib/species'
  *  - iOS: AR Quick Look (.usdz) — mesmo princípio, ancoragem real no chão
  *    via câmera, nativo do iOS.
  *
- * MVP: ainda não temos modelagem 3D por espécie real, então usamos um
- * placeholder por categoria (cacto, suculenta, flor, erva, tropical, árvore)
- * — silhueta reconhecível, mais honesto que um "vaso genérico" único.
+ * Ainda não temos modelagem por espécie real, então usamos um modelo por
+ * categoria (cacto, suculenta, flor, erva, tropical, árvore). Cada um é uma
+ * planta no vaso claramente reconhecível à primeira vista — flor com pétalas
+ * em coroa, cacto saguaro com braços, árvore com copa, suculenta em roseta,
+ * erva em tufo, tropical com folhas largas.
+ *
+ * Os .glb (Android/visualizador) e .usdz (iOS Quick Look) são gerados por
+ * scripts/gen-models.py — rode `python3 scripts/gen-models.py` pra recriá-los.
  */
 
 function modelFor(category: SpeciesCategory) {
