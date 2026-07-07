@@ -97,6 +97,26 @@ export function isUnlocked(id: string): boolean {
   return UNLOCKED_SPECIES_IDS.has(id)
 }
 
+/** Caminhos dos modelos 3D reais por espécie (gerados por scripts/plantgen). */
+export function modelPathsFor(species: Species): { glb: string; usdz: string } {
+  // nomes de arquivo são ASCII (ex.: 'antúrio' -> 'anturio')
+  const slug = species.id.normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  return {
+    glb: `/models/species/${slug}.glb`,
+    usdz: `/models/species/${slug}.usdz`,
+  }
+}
+
+/** Faixa de umidade do ar recomendada (%) por categoria. */
+export const CATEGORY_HUMIDITY: Record<SpeciesCategory, { min: number; max: number; tip: string }> = {
+  cacto:     { min: 10, max: 30, tip: 'Ar seco é ótimo. Evite banheiros e cozinhas úmidas.' },
+  suculenta: { min: 20, max: 40, tip: 'Prefere ar seco; nunca borrife as folhas.' },
+  erva:      { min: 40, max: 60, tip: 'Umidade média. Vaso com boa drenagem perto da janela.' },
+  flor:      { min: 40, max: 60, tip: 'Umidade média; evite molhar as flores ao regar.' },
+  tropical:  { min: 60, max: 80, tip: 'Adora ar úmido: borrife as folhas ou use pratinho com pedras e água.' },
+  arvore:    { min: 50, max: 70, tip: 'Umidade moderada e boa ventilação, longe do ar-condicionado.' },
+}
+
 export const CATEGORY_LABELS: Record<SpeciesCategory, { plural: string; emoji: string }> = {
   suculenta: { plural: 'Suculentas', emoji: '🪷' },
   tropical:  { plural: 'Tropicais',  emoji: '🌿' },
