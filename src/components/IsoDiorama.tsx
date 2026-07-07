@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { Terrain, PlantedSpot } from '../lib/terrains'
-import { SPECIES_CATALOG } from '../lib/species'
+import { SPECIES_CATALOG, type Species } from '../lib/species'
 import { PlantSprite } from './PlantSprite'
 
 /**
@@ -18,6 +18,10 @@ import { PlantSprite } from './PlantSprite'
 interface IsoDioramaProps {
   terrain: Terrain
   foggy?: boolean
+  /** Espelha a cena horizontalmente (botão "girar vista"). */
+  flipped?: boolean
+  /** Toque numa planta (suprimido automaticamente durante arraste). */
+  onPlantTap?: (species: Species, status: PlantedSpot['status']) => void
 }
 
 /* ─── Dimensões e helpers ─────────────────────────────────── */
@@ -106,9 +110,74 @@ const THEME: Record<Terrain['theme'], {
   },
 }
 
-export function IsoDiorama({ terrain, foggy = false }: IsoDioramaProps) {
+export function IsoDiorama({ terrain, foggy = false, flipped = false, onPlantTap }: IsoDioramaProps) {
   const t = THEME[terrain.theme]
   const layout = LAYOUTS[terrain.theme] ?? LAYOUTS.sacada
+
+  /* Pan & zoom por gestos (arrastar / pinça / scroll) */
+  const [view, setView] = useState({ x: 0, y: 0, scale: 1 })
+  const pointers = useRef(new Map<number, { x: number; y: number }>())
+  const gesture = useRef({ startDist: 0, startScale: 1, moved: false })
+  const draggedRecently = useRef(false)
+
+  function clampView(v: { x: number; y: number; scale: number }) {
+    const scale = Math.min(2.4, Math.max(0.7, v.scale))
+    const range = 150 * scale
+    return {
+      scale,
+      x: Math.min(range, Math.max(-range, v.x)),
+      y: Math.min(range, Math.max(-range, v.y)),
+    }
+  }
+
+  function onPointerDown(e: React.PointerEvent) {
+    // sem pointer capture: capturar faria o `click` disparar no container,
+    // matando o toque nas plantas
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    gesture.current.moved = false
+    if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()]
+      gesture.current.startDist = Math.hypot(a.x - b.x, a.y - b.y)
+      gesture.current.startScale = view.scale
+    }
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    const prev = pointers.current.get(e.pointerId)
+    if (!prev) return
+    const dx = e.clientX - prev.x
+    const dy = e.clientY - prev.y
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    if (Math.abs(dx) + Math.abs(dy) > 2) gesture.current.moved = true
+
+    if (pointers.current.size === 1) {
+      setView((v) => clampView({ ...v, x: v.x + dx, y: v.y + dy }))
+    } else if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()]
+      const dist = Math.hypot(a.x - b.x, a.y - b.y)
+      if (gesture.current.startDist > 0) {
+        const scale = gesture.current.startScale * (dist / gesture.current.startDist)
+        setView((v) => clampView({ ...v, scale }))
+      }
+    }
+  }
+
+  function onPointerUp(e: React.PointerEvent) {
+    pointers.current.delete(e.pointerId)
+    if (gesture.current.moved) {
+      draggedRecently.current = true
+      setTimeout(() => { draggedRecently.current = false }, 120)
+    }
+  }
+
+  function onWheel(e: React.WheelEvent) {
+    setView((v) => clampView({ ...v, scale: v.scale * (e.deltaY < 0 ? 1.12 : 0.89) }))
+  }
+
+  function handlePlantTap(species: Species, status: PlantedSpot['status']) {
+    if (draggedRecently.current) return
+    onPlantTap?.(species, status)
+  }
 
   // Calcula bounding box do layout pra centralizar a cena
   const { originX, originY, viewBoxW, viewBoxH } = useMemo(() => {
@@ -152,7 +221,14 @@ export function IsoDiorama({ terrain, foggy = false }: IsoDioramaProps) {
         className="absolute inset-0 rounded-3xl overflow-hidden"
         style={{
           background: `linear-gradient(180deg, ${t.bgTop} 0%, ${t.bgBot} 100%)`,
+          touchAction: 'none',
+          cursor: 'grab',
         }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onWheel={onWheel}
       >
         {/* Grid de fundo (sutil) */}
         <svg className="absolute inset-0 w-full h-full opacity-50 pointer-events-none" aria-hidden>
@@ -182,11 +258,15 @@ export function IsoDiorama({ terrain, foggy = false }: IsoDioramaProps) {
           ))}
         </div>
 
-        {/* SVG do diorama */}
+        {/* SVG do diorama (pan/zoom/flip aplicados via transform) */}
         <svg
           viewBox={`0 0 ${viewBoxW} ${viewBoxH}`}
           className="absolute inset-0 w-full h-full"
           preserveAspectRatio="xMidYMid meet"
+          style={{
+            transform: `translate(${view.x}px, ${view.y}px) scale(${view.scale * (flipped ? -1 : 1)}, ${view.scale})`,
+            transition: pointers.current.size > 0 ? 'none' : 'transform 0.15s ease-out',
+          }}
         >
           <defs>
             {/* Gradientes reutilizáveis */}
@@ -254,8 +334,26 @@ export function IsoDiorama({ terrain, foggy = false }: IsoDioramaProps) {
                   const off = offsets[i % offsets.length]
                   const scale = (spot.scale ?? 1) * 1.15
                   return (
-                    <g key={i} transform={`translate(${cx + off.dx} ${cy + off.dy})`}>
+                    <g
+                      key={i}
+                      transform={`translate(${cx + off.dx} ${cy + off.dy})`}
+                      role={onPlantTap ? 'button' : undefined}
+                      style={onPlantTap ? { cursor: 'pointer' } : undefined}
+                      onClick={() => handlePlantTap(species, spot.status)}
+                    >
+                      {/* área de toque generosa (invisível) */}
+                      <ellipse cx="0" cy="-14" rx="20" ry="26" fill="transparent" />
+                      {/* anel de "quer água" pulsando embaixo da planta sedenta */}
+                      {spot.status === 'thirsty' && (
+                        <ellipse cx="0" cy="2" rx="16" ry="5" fill="none" stroke="#fcd34d" strokeWidth="1.5" opacity="0.85">
+                          <animate attributeName="rx" values="14;18;14" dur="1.8s" repeatCount="indefinite" />
+                          <animate attributeName="opacity" values="0.85;0.3;0.85" dur="1.8s" repeatCount="indefinite" />
+                        </ellipse>
+                      )}
                       <PlantSprite species={species} scale={scale} thirsty={spot.status === 'thirsty'} />
+                      {spot.status === 'thirsty' && (
+                        <text x="10" y="-30" fontSize="11" style={{ userSelect: 'none' }}>💧</text>
+                      )}
                     </g>
                   )
                 })}

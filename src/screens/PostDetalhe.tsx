@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { PlantSprite } from '../components/PlantSprite'
 import { Chip } from '../components/ui'
+import { SPECIES_CATALOG } from '../lib/species'
 
 /**
  * Detalhe expandido de um post do feed — com comentários.
@@ -60,6 +62,10 @@ export function PostDetalhe() {
   const [likeCount, setLikeCount] = useState(post?.likes ?? 0)
   const [commentInput, setCommentInput] = useState('')
   const [comments, setComments] = useState(post?.comments ?? [])
+
+  const postSpecies = SPECIES_CATALOG.find(
+    (s) => post && s.scientificName.toLowerCase().startsWith(post.plant.name.split(' ')[0].toLowerCase()),
+  ) ?? SPECIES_CATALOG[0]
 
   if (!post) {
     return (
@@ -130,12 +136,32 @@ export function PostDetalhe() {
             <Chip tone="leaf" icon={<span>🔥</span>}>{post.author.streak}d</Chip>
           </div>
 
-          {/* Imagem */}
+          {/* Imagem — cena ilustrada com a planta do post */}
           <div
-            className="relative aspect-square mx-3 mb-3 rounded-2xl overflow-hidden flex items-center justify-center"
-            style={{ background: post.imageBg, border: '2px solid var(--color-leaf-200)' }}
+            className="relative mx-3 mb-3 rounded-2xl overflow-hidden"
+            style={{ aspectRatio: '4 / 3', border: '2px solid var(--color-leaf-200)' }}
           >
-            <div className="text-[160px] leading-none drop-shadow-sm">{post.imageEmoji}</div>
+            <svg viewBox="0 0 200 150" className="w-full h-full block" preserveAspectRatio="xMidYMid slice">
+              <defs>
+                <linearGradient id="post-sky" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#dff3ff" />
+                  <stop offset="100%" stopColor="white" />
+                </linearGradient>
+              </defs>
+              <rect width="200" height="150" fill="url(#post-sky)" />
+              <ellipse cx="30" cy="150" rx="90" ry="34" fill="#cdeeda" opacity="0.55" />
+              <ellipse cx="185" cy="152" rx="100" ry="40" fill="#cdeeda" opacity="0.8" />
+              <circle cx="168" cy="26" r="14" fill="#ffdf80" opacity="0.9" />
+              <g fill="white" opacity="0.85">
+                <ellipse cx="46" cy="28" rx="18" ry="7" />
+                <ellipse cx="60" cy="24" rx="12" ry="6" />
+              </g>
+              {postSpecies && (
+                <g transform="translate(100 118) scale(2.2)">
+                  <PlantSprite species={postSpecies} scale={1} />
+                </g>
+              )}
+            </svg>
             <div className="absolute bottom-3 left-3">
               <Chip tone="leaf" icon={<span>🌱</span>}>
                 {post.plant.name} (Nv. {post.plant.level})

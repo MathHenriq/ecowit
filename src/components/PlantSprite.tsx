@@ -14,7 +14,8 @@ interface PlantSpriteProps {
 }
 
 export function PlantSprite({ species, scale = 1, thirsty = false }: PlantSpriteProps) {
-  const filter = thirsty ? 'url(#thirsty-filter)' : undefined
+  // filtro CSS direto (não depende de <filter> definido no SVG pai)
+  const filter = thirsty ? 'saturate(0.5) brightness(0.97)' : undefined
   // Renderiza a planta certa por id, com fallback por categoria
   const renderer = SPRITES[species.id] ?? CATEGORY_FALLBACK[species.category]
   return (

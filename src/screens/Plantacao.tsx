@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { IsoDiorama } from '../components/IsoDiorama'
 import { ARLoading } from '../components/ARLoading'
 import { Brotin } from '../components/Brotin'
+import { PlantSprite } from '../components/PlantSprite'
 import { Chip } from '../components/ui'
 import { SPECIES_CATALOG, type Species } from '../lib/species'
 import { TERRAINS, USER_LEVEL, isTerrainUnlocked, withLiveStatus } from '../lib/terrains'
@@ -18,6 +19,8 @@ export function Plantacao() {
   const [activeIdx, setActiveIdx] = useState(0)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [arOpen, setArOpen] = useState(false)
+  const [flipped, setFlipped] = useState(false)
+  const [selected, setSelected] = useState<{ species: Species; status: 'healthy' | 'thirsty' } | null>(null)
 
   const active = useMemo(() => withLiveStatus(TERRAINS[activeIdx]), [activeIdx])
   const activeUnlocked = isTerrainUnlocked(active)
@@ -78,7 +81,9 @@ export function Plantacao() {
           </button>
           <button
             aria-label="Rodar vista"
-            className="w-10 h-10 rounded-full bg-white border-2 border-[var(--color-earth-200)] shadow-[0_3px_0_var(--color-earth-300)] flex items-center justify-center"
+            onClick={() => setFlipped((v) => !v)}
+            className="w-10 h-10 rounded-full bg-white border-2 border-[var(--color-earth-200)] shadow-[0_3px_0_var(--color-earth-300)] flex items-center justify-center active:scale-90 transition-transform"
+            style={flipped ? { transform: 'scaleX(-1)' } : undefined}
           >
             🔄
           </button>
@@ -136,7 +141,12 @@ export function Plantacao() {
 
       {/* DIORAMA */}
       <div className="flex-1 flex flex-col min-h-0 px-4 pt-2 pb-4 relative">
-        <IsoDiorama terrain={active} foggy={!activeUnlocked} />
+        <IsoDiorama
+          terrain={active}
+          foggy={!activeUnlocked}
+          flipped={flipped}
+          onPlantTap={(species, status) => setSelected({ species, status })}
+        />
 
         {/* Overlay "bloqueado" */}
         {!activeUnlocked && (
@@ -154,8 +164,55 @@ export function Plantacao() {
           </div>
         )}
 
+        {/* Card da planta tocada */}
+        {selected && (
+          <div
+            className="absolute inset-x-6 bottom-6 rounded-2xl p-3 flex items-center gap-3 bg-white"
+            style={{
+              border: '2px solid var(--color-leaf-300)',
+              boxShadow: '0 4px 0 var(--color-leaf-500), 0 10px 24px rgba(0,60,30,0.25)',
+            }}
+          >
+            <svg viewBox="-22 -42 44 48" className="w-14 h-14 shrink-0">
+              <PlantSprite species={selected.species} scale={1} thirsty={selected.status === 'thirsty'} />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-extrabold leading-tight truncate">{selected.species.popularName}</div>
+              <div className={`text-[10px] font-bold ${selected.status === 'thirsty' ? 'text-amber-600' : 'text-[var(--color-leaf-600)]'}`}>
+                {selected.status === 'thirsty'
+                  ? '💧 com sede — rega a cada ' + selected.species.waterDays + 'd'
+                  : '💚 saudável — rega a cada ' + selected.species.waterDays + 'd'}
+              </div>
+              <div className="flex gap-1.5 mt-1.5">
+                <Link
+                  to={`/jardim/${selected.species.id}`}
+                  className="px-3 py-1 rounded-full text-[10px] font-extrabold bg-[var(--color-leaf-500)] text-white uppercase"
+                >
+                  Cuidar
+                </Link>
+                {selected.status === 'thirsty' && (
+                  <Link
+                    to="/streak/rega"
+                    className="px-3 py-1 rounded-full text-[10px] font-extrabold uppercase"
+                    style={{ background: '#fff3cd', color: '#92600a', border: '1.5px solid #fcd34d' }}
+                  >
+                    💧 Regar
+                  </Link>
+                )}
+              </div>
+            </div>
+            <button
+              aria-label="Fechar"
+              onClick={() => setSelected(null)}
+              className="w-7 h-7 rounded-full bg-[var(--color-earth-100)] text-xs font-bold shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Card flutuante do Brotin com dica (só se desbloqueado) */}
-        {activeUnlocked && thirstySpeciesName && (
+        {activeUnlocked && !selected && thirstySpeciesName && (
           <div
             className="absolute left-6 bottom-6 max-w-[200px] rounded-2xl p-3 flex items-center gap-2 bg-white"
             style={{
@@ -197,7 +254,7 @@ export function Plantacao() {
 
       {/* Dica embaixo */}
       <div className="px-4 pb-3 text-center text-[10px] text-[var(--color-ink-faint)] font-bold uppercase tracking-wider">
-        Toque numa planta pra cuidar · arraste pra explorar
+        Toque numa planta pra cuidar · arraste, dê zoom e gire pra explorar
       </div>
 
       {arOpen && (

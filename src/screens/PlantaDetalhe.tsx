@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import '@google/model-viewer'
+import { lazy, Suspense, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ARLoading } from '../components/ARLoading'
 import { Brotin } from '../components/Brotin'
-import { PlantSprite } from '../components/PlantSprite'
 import { Button, Card, Chip } from '../components/ui'
-import { SPECIES_CATALOG, UNLOCKED_SPECIES_IDS } from '../lib/species'
+import { SPECIES_CATALOG, UNLOCKED_SPECIES_IDS, modelPathsFor } from '../lib/species'
 import { getWaterings, getStreakDays } from '../lib/streak'
+
+const ARView = lazy(() => import('../components/ARView').then((m) => ({ default: m.ARView })))
 
 /**
  * Detalhe individual de uma espécie do jardim.
@@ -27,6 +30,7 @@ export function PlantaDetalhe() {
 
   const unlocked = UNLOCKED_SPECIES_IDS.has(species.id)
   const [holoVisible, setHoloVisible] = useState(false)
+  const [arOpen, setArOpen] = useState(false)
 
   // Mock: nível da planta baseado em quantas regas tem
   const allWaterings = getWaterings()
@@ -61,40 +65,41 @@ export function PlantaDetalhe() {
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-4">
-        {/* HERO — ilustração SVG da planta sobre disco com raios */}
+        {/* HERO — modelo 3D interativo (o mesmo do AR, sem precisar de câmera) */}
         <div
-          className="relative rounded-3xl overflow-hidden p-6 flex items-center justify-center cursor-pointer select-none"
+          className="relative rounded-3xl overflow-hidden select-none w-full shrink-0"
           style={{
             aspectRatio: '5 / 4',
             background:
-              'radial-gradient(circle at 50% 60%, var(--color-leaf-100) 0%, var(--color-cream) 70%)',
+              'radial-gradient(circle at 50% 65%, var(--color-leaf-100) 0%, var(--color-cream) 75%)',
             border: '2px solid var(--color-earth-200)',
             boxShadow: '0 4px 0 var(--color-earth-300)',
           }}
-          onClick={() => setHoloVisible((v) => !v)}
-          title="Toque para ver tag holográfica"
         >
-          {/* 8 raios em estrela */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden>
-            {[...Array(8)].map((_, i) => (
-              <div
-                key={i}
-                className="absolute w-1 h-32 opacity-25"
-                style={{
-                  background: 'linear-gradient(to bottom, var(--color-leaf-400), transparent)',
-                  transform: `rotate(${i * 45}deg) translateY(-80px)`,
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Sprite SVG centralizado — viewBox enquadrado no conteúdo real da planta */}
-          <svg viewBox="-26 -44 52 54" className="w-64 h-64 max-w-[80%] relative z-10 anim-float">
-            <PlantSprite species={species} scale={1} />
-          </svg>
+          <model-viewer
+            key={species.id}
+            src={modelPathsFor(species).glb}
+            alt={`Modelo 3D de ${species.popularName}`}
+            camera-controls
+            auto-rotate
+            auto-rotate-delay="1500"
+            disable-tap
+            shadow-intensity="0.9"
+            exposure="1.05"
+            environment-image="neutral"
+            interaction-prompt="none"
+            camera-orbit="25deg 72deg auto"
+            style={{
+              width: '100%',
+              height: '100%',
+              background: 'transparent',
+              '--poster-color': 'transparent',
+              filter: unlocked ? undefined : 'brightness(0.05)',
+            } as React.CSSProperties}
+          />
 
           {/* Badge de nível */}
-          <div className="absolute top-3 right-3">
+          <div className="absolute top-3 right-3 pointer-events-none">
             <Chip tone="sun" icon={<span>⭐</span>}>
               Nv. {plantLevel}
             </Chip>
@@ -102,23 +107,46 @@ export function PlantaDetalhe() {
 
           {/* Badge de raridade */}
           {species.rarity && species.rarity !== 'common' && (
-            <div className="absolute top-3 left-3">
+            <div className="absolute top-3 left-3 pointer-events-none">
               <Chip tone={species.rarity === 'epic' ? 'sun' : 'sky'}>
                 {species.rarity === 'epic' ? '🌟 ÉPICA' : '✨ RARA'}
               </Chip>
             </div>
           )}
 
-          {/* Dica de interação */}
-          {!holoVisible && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2">
-              <div className="px-2 py-1 rounded-full text-[10px] font-bold text-[var(--color-leaf-700)] bg-white/70 backdrop-blur-sm border border-[var(--color-leaf-300)] anim-pulse-soft">
-                ✦ Toque para tag holográfica
-              </div>
+          {/* Ações sobre o 3D */}
+          <div className="absolute bottom-2.5 inset-x-0 flex items-center justify-center gap-2">
+            <div className="px-2 py-1 rounded-full text-[10px] font-bold text-[var(--color-leaf-700)] bg-white/75 backdrop-blur-sm border border-[var(--color-leaf-300)] pointer-events-none">
+              👆 arraste pra girar em 3D
+            </div>
+            {unlocked && (
+              <>
+                <button
+                  onClick={() => setHoloVisible(true)}
+                  className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-white/75 backdrop-blur-sm"
+                  style={{ border: '1px solid rgba(0,180,150,0.5)', color: '#00695c' }}
+                >
+                  ✦ tag
+                </button>
+                <button
+                  onClick={() => setArOpen(true)}
+                  className="px-2.5 py-1 rounded-full text-[10px] font-extrabold text-white"
+                  style={{ background: 'linear-gradient(135deg, #0a1628, #0d2a1e)', border: '1px solid rgba(0,255,210,0.5)' }}
+                >
+                  ✦ ver em AR
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* silhueta misteriosa pra bloqueadas */}
+          {!unlocked && (
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 pointer-events-none">
+              <Chip tone="earth">🔒 ???</Chip>
             </div>
           )}
 
-          {/* Hologram Tag — aparece ao tocar */}
+          {/* Hologram Tag — aparece ao tocar no botão */}
           {holoVisible && (
             <HologramTag species={species} level={plantLevel} onClose={() => setHoloVisible(false)} />
           )}
@@ -248,6 +276,17 @@ export function PlantaDetalhe() {
           </>
         )}
       </div>
+
+      {arOpen && (
+        <Suspense fallback={<ARLoading />}>
+          <ARView
+            title={species.popularName}
+            species={[species]}
+            layout="front"
+            onClose={() => setArOpen(false)}
+          />
+        </Suspense>
+      )}
     </main>
   )
 }
