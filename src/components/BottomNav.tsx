@@ -1,16 +1,21 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 
 /**
- * BottomNav — 5 abas + botão central de câmera flutuante (a la Duolingo).
+ * BottomNav — 6 abas + botão central de câmera flutuante (a la Duolingo).
+ * 3 abas de cada lado da câmera pra ela ficar centralizada de verdade.
  * Aparece em todas as rotas autenticadas via AppLayout.
  */
 
-const TABS: { to: string; label: string; icon: string }[] = [
+const LEFT_TABS: { to: string; label: string; icon: string }[] = [
   { to: '/home',      label: 'Feed',       icon: '🏠' },
   { to: '/streak',    label: 'Hábito',     icon: '🔥' },
-  // botão central (câmera) renderizado separadamente
   { to: '/jardim',    label: 'Jardim',     icon: '🌿' },
+]
+
+const RIGHT_TABS: { to: string; label: string; icon: string }[] = [
   { to: '/plantacao', label: 'Plantação',  icon: '🌱' },
+  { to: '/perfil',    label: 'Perfil',     icon: '👤' },
+  { to: '/config',    label: 'Ajustes',    icon: '⚙️' },
 ]
 
 export function BottomNav() {
@@ -28,34 +33,34 @@ export function BottomNav() {
         paddingBottom: 'max(env(safe-area-inset-bottom), 14px)',
       }}
     >
-      <div className="flex items-center justify-around px-2">
-        {TABS.slice(0, 2).map((t) => (
+      <div className="flex items-end px-1">
+        {LEFT_TABS.map((t) => (
           <TabLink key={t.to} {...t} />
         ))}
 
         {/* Botão central — câmera */}
-        <button
-          onClick={() => navigate('/scan')}
-          aria-label="Identificar planta"
-          className="relative -mt-5 shrink-0"
-        >
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
-            style={{
-              background: 'linear-gradient(180deg, var(--color-leaf-400), var(--color-leaf-600))',
-              boxShadow: '0 -3px 0 var(--color-leaf-800) inset, 0 6px 14px rgba(46,204,113,0.35)',
-              color: 'white',
-            }}
+        <div className="shrink-0 flex justify-center" style={{ width: 64 }}>
+          <button
+            onClick={() => navigate('/scan')}
+            aria-label="Identificar planta"
+            className="relative -mt-5"
           >
-            📷
-          </div>
-        </button>
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
+              style={{
+                background: 'linear-gradient(180deg, var(--color-leaf-400), var(--color-leaf-600))',
+                boxShadow: '0 -3px 0 var(--color-leaf-800) inset, 0 6px 14px rgba(46,204,113,0.35)',
+                color: 'white',
+              }}
+            >
+              📷
+            </div>
+          </button>
+        </div>
 
-        {TABS.slice(2).map((t) => (
+        {RIGHT_TABS.map((t) => (
           <TabLink key={t.to} {...t} />
         ))}
-
-        <TabLink to="/perfil" label="Perfil" icon="👤" />
       </div>
     </nav>
   )
@@ -66,7 +71,7 @@ function TabLink({ to, label, icon }: { to: string; label: string; icon: string 
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex flex-col items-center gap-0.5 py-1.5 px-1 min-w-[52px] transition-colors ${
+        `flex-1 flex flex-col items-center gap-0.5 py-1.5 transition-colors ${
           isActive ? 'text-[var(--color-leaf-700)]' : 'text-[var(--color-ink-faint)]'
         }`
       }
@@ -83,7 +88,7 @@ function TabLink({ to, label, icon }: { to: string; label: string; icon: string 
           >
             {icon}
           </div>
-          <span className="text-[10px] font-extrabold">{label}</span>
+          <span className="text-[9px] font-extrabold leading-none whitespace-nowrap">{label}</span>
         </>
       )}
     </NavLink>
