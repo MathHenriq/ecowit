@@ -11,9 +11,13 @@ from pathlib import Path
 
 import numpy as np
 import trimesh
+from PIL import Image
 from pygltflib import GLTF2
+from trimesh.visual import TextureVisuals
+from trimesh.visual.material import PBRMaterial
 
 sys.path.insert(0, str(Path(__file__).parent))
+from bake import bake_mesh  # noqa: E402
 from plants import BUILDERS  # noqa: E402
 
 OUT_DIR = Path(__file__).resolve().parents[2] / 'public' / 'models' / 'species'
@@ -22,35 +26,39 @@ OUT_DIR = Path(__file__).resolve().parents[2] / 'public' / 'models' / 'species'
 def export_glb(species_id: str, out_path: Path):
     rng = np.random.default_rng(abs(hash(species_id)) % (2 ** 32))
     m = BUILDERS[species_id](rng)
-    # COLOR_0 no glTF é linear; nossas paletas são sRGB — converte pra não lavar
-    C = m['C'].astype(np.float64) / 255.0
-    C[:, :3] = C[:, :3] ** 2.2
-    C = (C * 255).round().astype(np.uint8)
-    tm = trimesh.Trimesh(vertices=m['V'], faces=m['F'],
-                         vertex_colors=C, process=False)
+
+    # Cor por vértice -> baseColorTexture (AR real precisa disso; COLOR_0 fica
+    # preto no Scene Viewer/Quick Look). UV constante por face = sem bleed.
+    baked = bake_mesh(m)
+    img = Image.fromarray(baked['image'], mode='RGB')
+    mat = PBRMaterial(
+        name='plant',
+        baseColorTexture=img,
+        metallicFactor=0.0,
+        roughnessFactor=0.9,
+    )
+    # trimesh inverte V na exportação glTF; pré-compensa pra amostrar o texel certo
+    uvs = baked['uvs'].copy()
+    uvs[:, 1] = 1.0 - uvs[:, 1]
+    visual = TextureVisuals(uv=uvs, image=img, material=mat)
+    tm = trimesh.Trimesh(vertices=baked['positions'], faces=baked['indices'],
+                         visual=visual, process=False)
     scene = trimesh.Scene({species_id: tm})
     glb = trimesh.exchange.gltf.export_glb(scene, include_normals=True)
     out_path.write_bytes(glb)
 
-    # pós-processa: material fosco, dupla face (folhas são superfícies abertas)
+    # pós-processa: dupla face (folhas são superfícies abertas) + sampler nearest
     g = GLTF2.load_binary(str(out_path))
-    if not g.materials:
-        from pygltflib import Material, PbrMetallicRoughness
-        g.materials = [Material(
-            name='plant',
-            doubleSided=True,
-            pbrMetallicRoughness=PbrMetallicRoughness(
-                baseColorFactor=[1, 1, 1, 1], metallicFactor=0.0, roughnessFactor=0.85),
-        )]
-    for mat in g.materials:
+    for mat in g.materials or []:
         mat.doubleSided = True
         if mat.pbrMetallicRoughness:
             mat.pbrMetallicRoughness.metallicFactor = 0.0
-            mat.pbrMetallicRoughness.roughnessFactor = 0.85
-    for mm in g.meshes:
-        for prim in mm.primitives:
-            if prim.material is None:
-                prim.material = 0
+            mat.pbrMetallicRoughness.roughnessFactor = 0.9
+    # amostragem nearest evita qualquer suavização entre células da paleta
+    from pygltflib import Sampler
+    g.samplers = [Sampler(magFilter=9728, minFilter=9728, wrapS=33071, wrapT=33071)]
+    for tex in g.textures or []:
+        tex.sampler = 0
     g.save_binary(str(out_path))
 
 
