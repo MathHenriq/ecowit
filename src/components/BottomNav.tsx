@@ -13,7 +13,7 @@ const LEFT_TABS: { to: string; label: string; icon: string }[] = [
 ]
 
 const RIGHT_TABS: { to: string; label: string; icon: string }[] = [
-  { to: '/plantacao', label: 'Plantação',  icon: '🌱' },
+  { to: '/catalogo',  label: 'Catálogo',   icon: '📖' },
   { to: '/perfil',    label: 'Perfil',     icon: '👤' },
   { to: '/config',    label: 'Ajustes',    icon: '⚙️' },
 ]

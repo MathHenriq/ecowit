@@ -4,7 +4,8 @@ import { Login } from './screens/Login'
 import { Onboarding } from './screens/Onboarding'
 import { Feed } from './screens/Feed'
 import { Jardim } from './screens/Jardim'
-import { Plantacao } from './screens/Plantacao'
+import { Catalogo } from './screens/Catalogo'
+import { Navigate } from 'react-router-dom'
 import { Scan } from './screens/Scan'
 import { ScanResult } from './screens/ScanResult'
 import { Streak } from './screens/Streak'
@@ -38,7 +39,9 @@ export default function App() {
             <Route path="/home" element={<Feed />} />
             <Route path="/jardim" element={<Jardim />} />
             <Route path="/jardim/:speciesId" element={<PlantaDetalhe />} />
-            <Route path="/plantacao" element={<Plantacao />} />
+            <Route path="/catalogo" element={<Catalogo />} />
+            {/* a antiga Plantação virou o próprio Jardim 3D */}
+            <Route path="/plantacao" element={<Navigate to="/jardim" replace />} />
             <Route path="/streak" element={<Streak />} />
             <Route path="/perfil" element={<Perfil />} />
           </Route>

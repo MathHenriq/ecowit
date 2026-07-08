@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom'
 import { Brotin } from '../components/Brotin'
 import { PlantSprite } from '../components/PlantSprite'
 import { Chip } from '../components/ui'
+import { computePlantStatus, loadGarden } from '../lib/garden'
 import { SPECIES_CATALOG, type Species } from '../lib/species'
 import { getStreakDays, getWaterings, todayISO } from '../lib/streak'
-import { TERRAINS, isTerrainUnlocked, withLiveStatus } from '../lib/terrains'
 
 /**
  * Feed — home do app. Três camadas, da mais útil pra mais social:
@@ -16,24 +16,20 @@ import { TERRAINS, isTerrainUnlocked, withLiveStatus } from '../lib/terrains'
 
 /* ─── Dados vivos do jardim ─────────────────────────────────── */
 
-interface GardenPlant {
+interface FeedPlant {
   species: Species
   status: 'healthy' | 'thirsty'
-  terrainName: string
 }
 
-function useGarden(): GardenPlant[] {
+function useGarden(): FeedPlant[] {
   return useMemo(() => {
     const seen = new Set<string>()
-    const out: GardenPlant[] = []
-    for (const t of TERRAINS.filter(isTerrainUnlocked)) {
-      const live = withLiveStatus(t)
-      for (const p of live.plants) {
-        if (seen.has(p.speciesId)) continue
-        seen.add(p.speciesId)
-        const species = SPECIES_CATALOG.find((s) => s.id === p.speciesId)
-        if (species) out.push({ species, status: p.status, terrainName: t.name })
-      }
+    const out: FeedPlant[] = []
+    for (const p of loadGarden()) {
+      if (seen.has(p.speciesId)) continue
+      seen.add(p.speciesId)
+      const species = SPECIES_CATALOG.find((s) => s.id === p.speciesId)
+      if (species) out.push({ species, status: computePlantStatus(p.speciesId) })
     }
     // sedentas primeiro
     return out.sort((a, b) => (a.status === b.status ? 0 : a.status === 'thirsty' ? -1 : 1))
@@ -159,7 +155,7 @@ export function Feed() {
         {garden.length > 0 && (
           <section className="pt-4">
             <div className="px-4">
-              <SectionTitle emoji="🪴" action={<Link to="/plantacao" className="text-[11px] font-extrabold text-[var(--color-leaf-600)]">ver plantação →</Link>}>
+              <SectionTitle emoji="🪴" action={<Link to="/jardim" className="text-[11px] font-extrabold text-[var(--color-leaf-600)]">ver jardim 3D →</Link>}>
                 Suas plantas
               </SectionTitle>
             </div>

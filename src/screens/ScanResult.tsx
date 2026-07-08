@@ -62,7 +62,8 @@ export function ScanResult() {
 
   function dismissCelebration() {
     setShowCelebration(false)
-    navigate('/jardim', { replace: true })
+    // vai direto pro jardim 3D em modo plantio: usuário escolhe o canteiro
+    navigate(`/jardim?plantar=${selectedSpeciesId}`, { replace: true })
   }
 
   if (!primary || !photo) return null
